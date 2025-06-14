@@ -6,7 +6,7 @@ import { ExecutionContext } from "toto-api-controller/dist/model/ExecutionContex
 import { ValidationError } from "toto-api-controller/dist/validation/Validator";
 import { TotoRuntimeError } from "toto-api-controller/dist/model/TotoRuntimeError";
 import { TopicsStore } from "../store/TopicsStore";
-import { EventPublisher } from "../evt/EventPublisher";
+import { EventPublisher, EVENTS } from "../evt/EventPublisher";
 
 
 export class DeleteTopic implements TotoDelegate {
@@ -39,7 +39,7 @@ export class DeleteTopic implements TotoDelegate {
             const deletedCount = await topicStore.deleteTopicById(req.params.id, user)
 
             // Publish the event
-            if (deletedCount > 0) new EventPublisher(execContext, "tometopics").publishEvent(req.params.id, "topic_deleted", `Topic with id ${req.params.id} deleted by user ${user}`, topic);
+            if (deletedCount > 0) new EventPublisher(execContext, "tometopics").publishEvent(req.params.id, EVENTS.topicDeleted, `Topic with id ${req.params.id} deleted by user ${user}`, topic);
 
             return {deletedCount: deletedCount}
 
