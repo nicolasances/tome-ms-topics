@@ -8,6 +8,7 @@ import { TotoRuntimeError } from "toto-api-controller/dist/model/TotoRuntimeErro
 import { TopicsStore } from "../store/TopicsStore";
 import { Topic } from "../model/Topic";
 import moment from "moment-timezone";
+import { EventPublisher } from "../evt/EventPublisher";
 
 
 export class PostTopic implements TotoDelegate {
@@ -45,6 +46,9 @@ export class PostTopic implements TotoDelegate {
             const topic = new Topic(body.name, body.blogURL, moment().tz("Europe/Rome").format("YYYYMMDD"), user);
 
             const id = await topicStore.saveTopic(topic);
+
+            // Publish the event
+            new EventPublisher(execContext, "tometopics").publishEvent(id, "topic_created", `Topic ${body.name} created by user ${user}`, topic);
 
             // Return something
             return {id: id}

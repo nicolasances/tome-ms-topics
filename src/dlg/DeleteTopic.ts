@@ -6,13 +6,13 @@ import { ExecutionContext } from "toto-api-controller/dist/model/ExecutionContex
 import { ValidationError } from "toto-api-controller/dist/validation/Validator";
 import { TotoRuntimeError } from "toto-api-controller/dist/model/TotoRuntimeError";
 import { TopicsStore } from "../store/TopicsStore";
+import { EventPublisher } from "../evt/EventPublisher";
 
 
 export class DeleteTopic implements TotoDelegate {
 
     async do(req: Request, userContext: UserContext, execContext: ExecutionContext): Promise<any> {
 
-        const body = req.body
         const logger = execContext.logger;
         const cid = execContext.cid;
         const config = execContext.config as ControllerConfig;
@@ -31,7 +31,15 @@ export class DeleteTopic implements TotoDelegate {
 
             const topicStore = new TopicsStore(db, config); 
 
+            // Read the topic
+            const topic = await topicStore.findTopicById(req.params.id, user);
+
+            if (!topic) throw new ValidationError(404, `Topic with id ${req.params.id} not found for user ${user}`);
+
             const deletedCount = await topicStore.deleteTopicById(req.params.id, user)
+
+            // Publish the event
+            if (deletedCount > 0) new EventPublisher(execContext, "tometopics").publishEvent(req.params.id, "topic_deleted", `Topic with id ${req.params.id} deleted by user ${user}`, topic);
 
             return {deletedCount: deletedCount}
 

@@ -23,6 +23,18 @@ export class TopicsStore {
     }
 
     /**
+     * Finds a topic by its ID for a given user.
+     */
+    async findTopicById(id: string, user: string): Promise<Topic | null> {
+
+        const result = await this.db.collection(this.topicsCollection).findOne({ _id: new ObjectId(id), user: user });
+
+        if (!result) return null;
+
+        return Topic.fromBSON(result);
+    }
+
+    /**
      * Finds all topics for a given user.
      * Returns an array of Topic objects.
      */
