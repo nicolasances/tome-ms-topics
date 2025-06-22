@@ -5,7 +5,7 @@ import { ControllerConfig } from "../Config";
 export class TopicsStore {
 
     db: Db;
-    topicsCollection: string; 
+    topicsCollection: string;
 
     constructor(db: Db, config: ControllerConfig) {
         this.db = db;
