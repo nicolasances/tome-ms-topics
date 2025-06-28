@@ -1,6 +1,7 @@
 import { Db, ObjectId } from "mongodb";
 import { Topic } from "../model/Topic";
 import { ControllerConfig } from "../Config";
+import { Practice } from "../model/Practice";
 
 export class TopicsStore {
 
@@ -54,6 +55,20 @@ export class TopicsStore {
 
         return result.deletedCount
 
+    }
+
+    /**
+     * Updates the topic after a practice has finished
+     * 
+     * @param topicId the topic id
+     * @param practice the last practice
+     * @returns the updated count
+     */
+    async updateTopicLastPractice(topicId: string, practice: Practice): Promise<number> {
+
+        const result = await this.db.collection(this.topicsCollection).updateOne({ _id: new ObjectId(topicId) }, { $set: { lastPracticed: practice.finishedOn } })
+
+        return result.modifiedCount;
     }
 
     /**
