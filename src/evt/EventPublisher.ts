@@ -99,6 +99,9 @@ export const EVENTS = {
     // A topic has been deleted
     topicDeleted: "topicDeleted",
 
+    // A topic has been refreshed 
+    topicRefreshed: "topicRefreshed",
+
 }
 
 class TopicWrapper {
