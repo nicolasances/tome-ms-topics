@@ -39,7 +39,7 @@ export class RefreshTopic implements TotoDelegate {
             if (!preexistingTopic) throw new ValidationError(400, `Topic with id ${topicId} could not be found.`);
 
             // Publish the event
-            new EventPublisher(execContext, "tometopics").publishEvent(topicId, EVENTS.topicRefreshed, `Topic ${topicId} refreshed by user ${user}`, preexistingTopic);
+            await new EventPublisher(execContext, "tometopics").publishEvent(topicId, EVENTS.topicRefreshed, `Topic ${topicId} refreshed by user ${user}`, preexistingTopic);
 
             // Return something
             return {refreshed: true}
