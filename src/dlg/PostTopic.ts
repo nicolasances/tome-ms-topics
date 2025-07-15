@@ -48,7 +48,7 @@ export class PostTopic implements TotoDelegate {
             const id = await topicStore.saveTopic(topic);
 
             // Publish the event
-            new EventPublisher(execContext, "tometopics").publishEvent(id, EVENTS.topicCreated, `Topic ${body.name} created by user ${user}`, topic);
+            await new EventPublisher(execContext, "tometopics").publishEvent(id, EVENTS.topicCreated, `Topic ${body.name} created by user ${user}`, topic);
 
             // Return something
             return {id: id}
