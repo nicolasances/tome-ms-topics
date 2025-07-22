@@ -72,6 +72,21 @@ export class TopicsStore {
     }
 
     /**
+     * Updates the topic after flashcards have been created
+     * 
+     * @param topicId the topic id
+     * @param generation the flashcards generation and count
+     * @param flashcardsCount the number of flashcards created
+     * @returns the updated count
+     */
+    async updateTopicGeneration(topicId: string, generation: string, flashcardsCount: number): Promise<number> {
+
+        const result = await this.db.collection(this.topicsCollection).updateOne({ _id: new ObjectId(topicId) }, { $set: { generation: generation, flashcardsCount: flashcardsCount } })
+
+        return result.modifiedCount;
+    }
+
+    /**
      * Saves the specified topic to the database. 
      * Returns the ID of the inserted topic. 
      */

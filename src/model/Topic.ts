@@ -8,17 +8,21 @@ export class Topic {
     createdOn: string; // Date in format YYYYMMDD
     user: string; // User email
     lastPracticed?: string; // YYYYMMDD
+    generation?: string; 
+    flashcardsCount?: number; 
 
-    constructor(name: string, blogURL: string, createdOn: string, user: string, lastPracticed?: string) {
+    constructor(name: string, blogURL: string, createdOn: string, user: string, lastPracticed?: string, generation?: string, flashcardsCount?: number) {
         this.name = name;
         this.blogURL = blogURL;
         this.createdOn = createdOn;
         this.user = user;
         this.lastPracticed = lastPracticed;
+        this.generation = generation;
+        this.flashcardsCount = flashcardsCount;
     }
 
     static fromBSON(data: WithId<any>): Topic {
-        let topic = new Topic(data.name, data.blogURL, data.createdOn, data.user, data.lastPracticed);
+        let topic = new Topic(data.name, data.blogURL, data.createdOn, data.user, data.lastPracticed, data.generation, data.flashcardsCount);
         topic.id = data._id; 
 
         return topic;
@@ -30,7 +34,9 @@ export class Topic {
             blogURL: this.blogURL,
             createdOn: this.createdOn,
             user: this.user, 
-            lastPracticed: this.lastPracticed
+            lastPracticed: this.lastPracticed, 
+            generation: this.generation,
+            flashcardsCount: this.flashcardsCount,
         };
     }
 

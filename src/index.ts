@@ -5,6 +5,7 @@ import { GetTopics } from "./dlg/GetTopics";
 import { DeleteTopic } from "./dlg/DeleteTopic";
 import { GetTopic } from "./dlg/GetTopic";
 import { OnPracticeEvent } from "./evt/OnPracticeEvent";
+import { OnTopicEvent } from "./evt/OnTopicEvent";
 
 const api = new TotoAPIController("tome-ms-topics", new ControllerConfig())
 
@@ -14,6 +15,7 @@ api.path('DELETE', '/topics/:id', new DeleteTopic());
 api.path('GET', '/topics/:topicId', new GetTopic());
 
 api.path('POST', '/events/practice', new OnPracticeEvent())
+api.path('POST', '/events/topic', new OnTopicEvent())
 
 api.init().then(() => {
     api.listen()
