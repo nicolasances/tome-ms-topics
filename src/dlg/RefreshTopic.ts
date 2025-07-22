@@ -6,12 +6,10 @@ import { ExecutionContext } from "toto-api-controller/dist/model/ExecutionContex
 import { ValidationError } from "toto-api-controller/dist/validation/Validator";
 import { TotoRuntimeError } from "toto-api-controller/dist/model/TotoRuntimeError";
 import { TopicsStore } from "../store/TopicsStore";
-import { Topic } from "../model/Topic";
-import moment from "moment-timezone";
 import { EventPublisher, EVENTS } from "../evt/EventPublisher";
 
 
-export class PostTopic implements TotoDelegate {
+export class RefreshTopic implements TotoDelegate {
 
     async do(req: Request, userContext: UserContext, execContext: ExecutionContext): Promise<any> {
 
@@ -20,9 +18,7 @@ export class PostTopic implements TotoDelegate {
         const cid = execContext.cid;
         const config = execContext.config as ControllerConfig;
 
-        // Validate mandatory fields
-        if (!body.name) throw new ValidationError(400, "No name provided"); 
-        if (!body.blogURL) throw new ValidationError(400, "No Blog URL provided"); 
+        const topicId = req.params.topicId;
 
         // Extract user
         const user = userContext.email;
@@ -38,20 +34,15 @@ export class PostTopic implements TotoDelegate {
             const topicStore = new TopicsStore(db, config); 
 
             // Check that the topic does not already exist
-            const preexistingTopic = await topicStore.findTopicByName(body.name, user);
+            const preexistingTopic = await topicStore.findTopicById(topicId, user);
 
-            if (preexistingTopic) throw new ValidationError(400, `Topic with name ${body.name} already exists. It was created by user ${preexistingTopic.user}.`);
-
-            // Save the topic 
-            const topic = new Topic(body.name, body.blogURL, moment().tz("Europe/Rome").format("YYYYMMDD"), user);
-
-            const id = await topicStore.saveTopic(topic);
+            if (!preexistingTopic) throw new ValidationError(400, `Topic with id ${topicId} could not be found.`);
 
             // Publish the event
-            await new EventPublisher(execContext, "tometopics").publishEvent(id, EVENTS.topicCreated, `Topic ${body.name} created by user ${user}`, topic);
+            await new EventPublisher(execContext, "tometopics").publishEvent(topicId, EVENTS.topicRefreshed, `Topic ${topicId} refreshed by user ${user}`, preexistingTopic);
 
             // Return something
-            return {id: id}
+            return {refreshed: true}
 
 
         } catch (error) {

@@ -39,7 +39,7 @@ export class DeleteTopic implements TotoDelegate {
             const deletedCount = await topicStore.deleteTopicById(req.params.id, user)
 
             // Publish the event
-            if (deletedCount > 0) new EventPublisher(execContext, "tometopics").publishEvent(req.params.id, EVENTS.topicDeleted, `Topic with id ${req.params.id} deleted by user ${user}`, topic);
+            if (deletedCount > 0) await new EventPublisher(execContext, "tometopics").publishEvent(req.params.id, EVENTS.topicDeleted, `Topic with id ${req.params.id} deleted by user ${user}`, topic);
 
             return {deletedCount: deletedCount}
 
