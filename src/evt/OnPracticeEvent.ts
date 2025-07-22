@@ -18,7 +18,7 @@ export class OnPracticeEvent implements TotoDelegate {
 
         logger.compute(cid, `Received event ${JSON.stringify(msg)}`)
 
-        if (msg.type == EVENTS.practiceFinished) return new OnPracticeFinished(execContext).do(req);
+        if (msg.type == EVENTS.practiceFinished) return await new OnPracticeFinished(execContext).do(req);
 
         logger.compute(cid, `Event ${msg.type} is not handled by this service. Ignoring.`);
 

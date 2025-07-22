@@ -19,7 +19,7 @@ export class OnTopicEvent implements TotoDelegate {
 
         logger.compute(cid, `Received event ${JSON.stringify(msg)}`)
 
-        if (msg.type == EVENTS.flashcardsCreated) return new OnFlashcardsCreated(execContext).do(req);
+        if (msg.type == EVENTS.flashcardsCreated) return await new OnFlashcardsCreated(execContext).do(req);
 
         logger.compute(cid, `Event ${msg.type} is not handled by this service. Ignoring.`);
 
