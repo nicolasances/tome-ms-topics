@@ -67,6 +67,7 @@ export class ControllerConfig implements TotoControllerConfig {
     getProps(): ValidatorProps {
 
         return {
+            noCorrelationId: true
         }
     }
 
