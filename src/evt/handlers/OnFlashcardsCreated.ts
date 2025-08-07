@@ -6,6 +6,7 @@ import { ValidationError } from "toto-api-controller/dist/validation/Validator";
 import { Practice } from "../../model/Practice";
 import { TopicsStore } from "../../store/TopicsStore";
 import { FlashcardsCreatedEvent } from "../model/FlashcardsCreatedEvent";
+import { FlashcardsAPI } from "../../api/FlashcardsAPI";
 
 export class OnFlashcardsCreated {
 
@@ -36,8 +37,13 @@ export class OnFlashcardsCreated {
             client = await this.config.getMongoClient();
             const db = client.db(this.config.getDBName());
 
+            // 1. Retrieve the number of flashcards that the topic has so far 
+            const {flashcards} = await new FlashcardsAPI(this.execContext, req.headers.authorization as string).getFlashcards(eventPayload.topicId);
+
+            const count = flashcards.length;
+
             // Update the topic, recording the last practice date
-            const result = await new TopicsStore(db, this.config).updateTopicGeneration(eventPayload.topicId, eventPayload.generation, eventPayload.count);
+            const result = await new TopicsStore(db, this.config).updateTopicGeneration(eventPayload.topicId, eventPayload.generation, count);
         
             logger.compute(cid, `Topic ${eventPayload.topicId} updated with generation ${eventPayload.generation} and flashcards count ${eventPayload.count}. Modified count: ${result}`)
 
