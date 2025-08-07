@@ -34,7 +34,7 @@ export class RefreshTopic implements TotoDelegate {
             const topicStore = new TopicsStore(db, config); 
 
             // Check that the topic does not already exist
-            const preexistingTopic = await topicStore.findTopicById(topicId, user);
+            const preexistingTopic = await topicStore.findTopicById(topicId);
 
             if (!preexistingTopic) throw new ValidationError(400, `Topic with id ${topicId} could not be found.`);
 

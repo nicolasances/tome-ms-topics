@@ -31,7 +31,7 @@ export class GetTopic implements TotoDelegate {
 
             const topicStore = new TopicsStore(db, config); 
 
-            return await topicStore.findTopicById(topicId, user);
+            return await topicStore.findTopicById(topicId);
 
 
         } catch (error) {

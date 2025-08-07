@@ -32,7 +32,7 @@ export class DeleteTopic implements TotoDelegate {
             const topicStore = new TopicsStore(db, config); 
 
             // Read the topic
-            const topic = await topicStore.findTopicById(req.params.id, user);
+            const topic = await topicStore.findTopicById(req.params.id);
 
             if (!topic) throw new ValidationError(404, `Topic with id ${req.params.id} not found for user ${user}`);
 
