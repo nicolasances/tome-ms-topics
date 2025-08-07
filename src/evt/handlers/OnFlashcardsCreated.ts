@@ -37,15 +37,33 @@ export class OnFlashcardsCreated {
             client = await this.config.getMongoClient();
             const db = client.db(this.config.getDBName());
 
-            // 1. Retrieve the number of flashcards that the topic has so far 
-            const {flashcards} = await new FlashcardsAPI(this.execContext, req.headers.authorization as string).getFlashcards(eventPayload.topicId);
+            const topicStore = new TopicsStore(db, this.config);
+
+            // 1. Retrieve the number of flashcards that the topic has so far
+            const { flashcards } = await new FlashcardsAPI(this.execContext, req.headers.authorization as string).getFlashcards(eventPayload.topicId);
 
             const count = flashcards.length;
 
+            // 2. Check that if all sections have had flashcards created. We do that by counting the number of sections that have flashcards created and comparing that with the Topic's registered sections.
+            // 2.1. Count the number of sections that have flashcards created
+            const sections = new Set<string>();
+            for (const flashcard of flashcards) {
+                sections.add(flashcard.sectionCode);
+            }
+            const sectionsWithFlashcards = sections.size;
+
+            // 2.2. Get the topic's number of sections
+            const topic = await topicStore.findTopicById(eventPayload.topicId);
+            const expectedNumSections = topic?.numSections;
+
+            const isFlashcardComplete = sectionsWithFlashcards === expectedNumSections;
+
+            logger.compute(cid, `Topic ${eventPayload.topicId} has ${sectionsWithFlashcards} sections with flashcards, expected ${expectedNumSections}. Flashcard complete: ${isFlashcardComplete}`)
+
             // Update the topic, recording the last practice date
-            const result = await new TopicsStore(db, this.config).updateTopicGeneration(eventPayload.topicId, eventPayload.generation, count);
+            const result = await topicStore.updateTopicGeneration(eventPayload.topicId, eventPayload.generation, count, isFlashcardComplete);
         
-            logger.compute(cid, `Topic ${eventPayload.topicId} updated with generation ${eventPayload.generation} and flashcards count ${eventPayload.count}. Modified count: ${result}`)
+            logger.compute(cid, `Topic ${eventPayload.topicId} updated with generation ${eventPayload.generation} and flashcards count ${count}. Modified count: ${result}`)
 
             return { processed: true }
 

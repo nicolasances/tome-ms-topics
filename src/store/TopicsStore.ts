@@ -26,9 +26,9 @@ export class TopicsStore {
     /**
      * Finds a topic by its ID for a given user.
      */
-    async findTopicById(id: string, user: string): Promise<Topic | null> {
+    async findTopicById(id: string): Promise<Topic | null> {
 
-        const result = await this.db.collection(this.topicsCollection).findOne({ _id: new ObjectId(id), user: user });
+        const result = await this.db.collection(this.topicsCollection).findOne({ _id: new ObjectId(id) });
 
         if (!result) return null;
 
@@ -91,9 +91,9 @@ export class TopicsStore {
      * @param flashcardsCount the number of flashcards created
      * @returns the updated count
      */
-    async updateTopicGeneration(topicId: string, generation: string, flashcardsCount: number): Promise<number> {
+    async updateTopicGeneration(topicId: string, generation: string, flashcardsCount: number, isFlashcardGenerationComplete: boolean): Promise<number> {
 
-        const result = await this.db.collection(this.topicsCollection).updateOne({ _id: new ObjectId(topicId) }, { $set: { generation: generation, flashcardsCount: flashcardsCount } })
+        const result = await this.db.collection(this.topicsCollection).updateOne({ _id: new ObjectId(topicId) }, { $set: { generation: generation, flashcardsCount: flashcardsCount, isFlashcardGenerationComplete: isFlashcardGenerationComplete } })
 
         return result.modifiedCount;
     }

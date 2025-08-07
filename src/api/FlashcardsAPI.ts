@@ -37,7 +37,7 @@ export class FlashcardsAPI {
     }
 }
 
-type Flashcard = MultipleOptionsFlashcard | SectionTimelineFlashcard;
+type Flashcard = MultipleOptionsFlashcard | SectionTimelineFlashcard | DateFlashcard | GraphFlashcard;
 
 export interface GetFlashcardsResponse {
 
@@ -45,24 +45,34 @@ export interface GetFlashcardsResponse {
 
 }
 
-export interface MultipleOptionsFlashcard {
-
-    type: string;
-    user: string;
+interface GenericFlashcard {
+    type: string; 
+    user: string; 
     topicId: string; 
     topicCode: string; 
+    sectionCode: string;
+    sectionIndex: number;
+}
+
+export interface GraphFlashcard extends GenericFlashcard {
+}
+
+export interface DateFlashcard  extends GenericFlashcard {
+
+    question: string; 
+    correctYear: number;
+}
+
+export interface MultipleOptionsFlashcard extends GenericFlashcard {
+
     question: string; 
     options: string[];
     rightAnswerIndex: number; 
     id?: string;
     sectionShortTitle: string;
 }
-export interface SectionTimelineFlashcard {
+export interface SectionTimelineFlashcard extends GenericFlashcard {
     id?: string;
-    type: string;
-    user: string;
-    topicId: string;
-    topicCode: string;
     sectionTitle: string; 
     sectionShortTitle: string;
     events: SectionTimelineEvent[]; 
