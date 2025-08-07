@@ -10,9 +10,10 @@ export class Topic {
     lastPracticed?: string; // YYYYMMDD
     generation?: string; 
     flashcardsCount?: number; 
+    flashcardsGenerationComplete?: boolean; // Whether the flashcard generation is complete
     numSections?: number; // Number of sections in the topic
 
-    constructor(name: string, blogURL: string, createdOn: string, user: string, lastPracticed?: string, generation?: string, flashcardsCount?: number, numSections?: number) {
+    constructor(name: string, blogURL: string, createdOn: string, user: string, lastPracticed?: string, generation?: string, flashcardsCount?: number, numSections?: number, flashcardsGenerationComplete?: boolean) {
         this.name = name;
         this.blogURL = blogURL;
         this.createdOn = createdOn;
@@ -20,11 +21,12 @@ export class Topic {
         this.lastPracticed = lastPracticed;
         this.generation = generation;
         this.flashcardsCount = flashcardsCount;
+        this.flashcardsGenerationComplete = flashcardsGenerationComplete;
         this.numSections = numSections;
     }
 
     static fromBSON(data: WithId<any>): Topic {
-        let topic = new Topic(data.name, data.blogURL, data.createdOn, data.user, data.lastPracticed, data.generation, data.flashcardsCount, data.numSections);
+        let topic = new Topic(data.name, data.blogURL, data.createdOn, data.user, data.lastPracticed, data.generation, data.flashcardsCount, data.numSections, data.isFlashcardGenerationComplete);
         topic.id = data._id; 
 
         return topic;
@@ -40,6 +42,7 @@ export class Topic {
             generation: this.generation,
             flashcardsCount: this.flashcardsCount,
             numSections: this.numSections,
+            isFlashcardGenerationComplete: this.flashcardsGenerationComplete,
         };
     }
 
