@@ -72,6 +72,18 @@ export class TopicsStore {
     }
 
     /**
+     * Updates the metadata of a topic.
+     * @param topicId the topic id
+     * @returns 
+     */
+    async updateTopicMetadata(topicId: string, {numSections}: {numSections: number}): Promise<number> {
+
+        const result = await this.db.collection(this.topicsCollection).updateOne({ _id: new ObjectId(topicId) }, { $set: { numSections: numSections } });
+
+        return result.modifiedCount;
+    }
+
+    /**
      * Updates the topic after flashcards have been created
      * 
      * @param topicId the topic id
