@@ -10,8 +10,9 @@ export class Topic {
     lastPracticed?: string; // YYYYMMDD
     generation?: string; 
     flashcardsCount?: number; 
+    numSections?: number; // Number of sections in the topic
 
-    constructor(name: string, blogURL: string, createdOn: string, user: string, lastPracticed?: string, generation?: string, flashcardsCount?: number) {
+    constructor(name: string, blogURL: string, createdOn: string, user: string, lastPracticed?: string, generation?: string, flashcardsCount?: number, numSections?: number) {
         this.name = name;
         this.blogURL = blogURL;
         this.createdOn = createdOn;
@@ -19,10 +20,11 @@ export class Topic {
         this.lastPracticed = lastPracticed;
         this.generation = generation;
         this.flashcardsCount = flashcardsCount;
+        this.numSections = numSections;
     }
 
     static fromBSON(data: WithId<any>): Topic {
-        let topic = new Topic(data.name, data.blogURL, data.createdOn, data.user, data.lastPracticed, data.generation, data.flashcardsCount);
+        let topic = new Topic(data.name, data.blogURL, data.createdOn, data.user, data.lastPracticed, data.generation, data.flashcardsCount, data.numSections);
         topic.id = data._id; 
 
         return topic;
@@ -37,6 +39,7 @@ export class Topic {
             lastPracticed: this.lastPracticed, 
             generation: this.generation,
             flashcardsCount: this.flashcardsCount,
+            numSections: this.numSections,
         };
     }
 
