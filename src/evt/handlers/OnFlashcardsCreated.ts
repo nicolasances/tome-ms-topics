@@ -41,6 +41,7 @@ export class OnFlashcardsCreated {
 
             // 1. Retrieve the number of flashcards that the topic has so far
             const { flashcards } = await new FlashcardsAPI(this.execContext, req.headers.authorization as string).getFlashcards(eventPayload.topicId);
+            const flashcardTypes = await new FlashcardsAPI(this.execContext, req.headers.authorization as string).getFlashcardTypes();
 
             const count = flashcards.length;
 
@@ -50,13 +51,35 @@ export class OnFlashcardsCreated {
             for (const flashcard of flashcards) {
                 sections.add(flashcard.sectionCode);
             }
-            const sectionsWithFlashcards = sections.size;
 
             // 2.2. Get the topic's number of sections
             const topic = await topicStore.findTopicById(eventPayload.topicId);
-            const expectedNumSections = topic?.numSections;
 
-            const isFlashcardComplete = sectionsWithFlashcards === expectedNumSections;
+            const expectedNumSections = topic?.numSections;
+            const sectionsWithFlashcards = sections.size;
+
+            let isFlashcardComplete = false; 
+            if (sectionsWithFlashcards === expectedNumSections) {
+
+                // 2.3. If the number of sections with flashcards matches the expected number, we check if all flashcard types are present for each section
+                isFlashcardComplete = true;
+                for (const sectionCode of sections) {
+
+                    // Check if all flashcard types are present for this section
+                    let sectionComplete = true;
+                    for (const flashcardType of flashcardTypes.generated) {
+                        if (!flashcards.some(f => f.sectionCode === sectionCode && f.type === flashcardType)) {
+                            sectionComplete = false;
+                            break;
+                        }
+                    }
+
+                    if (!sectionComplete) {
+                        isFlashcardComplete = false;
+                        break;
+                    }
+                }
+            }
 
             logger.compute(cid, `Topic ${eventPayload.topicId} has ${sectionsWithFlashcards} sections with flashcards, expected ${expectedNumSections}. Flashcard complete: ${isFlashcardComplete}`)
 

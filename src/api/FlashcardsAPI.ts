@@ -15,6 +15,36 @@ export class FlashcardsAPI {
         this.authHeader = authHeader;
     }
 
+    /**
+     * Fetches the list of flashcard types supported by the API.
+     * 
+     * @returns A list of flashcard types supported by the API.
+     */
+    async getFlashcardTypes(): Promise<GetFlashcardTypesResponse> {
+        
+        return await new Promise<GetFlashcardTypesResponse>((resolve, reject) => {
+            http({
+                uri: `${this.endpoint}/flashcardtypes`,
+                method: 'GET',
+                headers: {
+                    'x-correlation-id': this.cid,
+                    'Authorization': this.authHeader
+                }
+            }, (err: any, resp: any, body: any) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(JSON.parse(body));
+                }
+            });
+        });
+    }
+
+    /**
+     * Fetches the list of flashcards for a specific topic.
+     * @param topicId The ID of the topic to fetch flashcards for.
+     * @returns A list of flashcards for the specified topic.
+     */
     async getFlashcards(topicId: string): Promise<GetFlashcardsResponse> {
 
         return await new Promise<GetFlashcardsResponse>((resolve, reject) => {
@@ -35,6 +65,11 @@ export class FlashcardsAPI {
             });
         });
     }
+}
+
+export interface GetFlashcardTypesResponse {
+    supported: string[];
+    generated: string[];
 }
 
 type Flashcard = MultipleOptionsFlashcard | SectionTimelineFlashcard | DateFlashcard | GraphFlashcard;
