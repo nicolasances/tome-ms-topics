@@ -83,10 +83,15 @@ export class OnFlashcardsCreated {
 
             logger.compute(cid, `Topic ${eventPayload.topicId} has ${sectionsWithFlashcards} sections with flashcards, expected ${expectedNumSections}. Flashcard complete: ${isFlashcardComplete}`)
 
+            // If the generation is complete, get the latest generation 
+            let generation = "-";
+            if (isFlashcardComplete) 
+                generation = await new FlashcardsAPI(this.execContext, req.headers.authorization as string).getLatestFlashcardsGeneration().then(res => res.latestGeneration);
+
             // Update the topic, recording the last practice date
-            const result = await topicStore.updateTopicGeneration(eventPayload.topicId, eventPayload.generation, count, isFlashcardComplete);
+            const result = await topicStore.updateTopicGeneration(eventPayload.topicId, generation, count, isFlashcardComplete);
         
-            logger.compute(cid, `Topic ${eventPayload.topicId} updated with generation ${eventPayload.generation} and flashcards count ${count}. Modified count: ${result}`)
+            logger.compute(cid, `Topic ${eventPayload.topicId} updated with generation ${generation} and flashcards count ${count}. Modified count: ${result}`)
 
             return { processed: true }
 

@@ -41,6 +41,29 @@ export class FlashcardsAPI {
     }
 
     /**
+     * Fetches the latest generation of flashcards
+     */
+    async getLatestFlashcardsGeneration(): Promise<GetLatestFlashcardsGenerationResponse> {
+        
+        return await new Promise<GetLatestFlashcardsGenerationResponse>((resolve, reject) => {
+            http({
+                uri: `${this.endpoint}/generation/latest`,
+                method: 'GET',
+                headers: {
+                    'x-correlation-id': this.cid,
+                    'Authorization': this.authHeader
+                }
+            }, (err: any, resp: any, body: any) => {
+                if (err) {
+                    reject(err);
+                } else {
+                    resolve(JSON.parse(body));
+                }
+            });
+        });
+    }
+
+    /**
      * Fetches the list of flashcards for a specific topic.
      * @param topicId The ID of the topic to fetch flashcards for.
      * @returns A list of flashcards for the specified topic.
@@ -65,6 +88,10 @@ export class FlashcardsAPI {
             });
         });
     }
+}
+
+export interface GetLatestFlashcardsGenerationResponse {
+    latestGeneration: string;
 }
 
 export interface GetFlashcardTypesResponse {
