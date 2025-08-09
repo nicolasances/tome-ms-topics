@@ -26,6 +26,7 @@ export class Topic {
     }
 
     static fromBSON(data: WithId<any>): Topic {
+        
         let topic = new Topic(data.name, data.blogURL, data.createdOn, data.user, data.lastPracticed, data.generation, data.flashcardsCount, data.numSections, data.isFlashcardGenerationComplete);
         topic.id = data._id; 
 

@@ -81,7 +81,7 @@ export class TopicsStore {
         const update = { $set: {} } as any;
 
         if (numSections != null) update.$set.numSections = numSections;
-        if (flashcardsGenerationComplete !== null) update.$set.flashcardsGenerationComplete = flashcardsGenerationComplete;
+        if (flashcardsGenerationComplete !== null) update.$set.isFlashcardGenerationComplete = flashcardsGenerationComplete;
 
         const result = await this.db.collection(this.topicsCollection).updateOne({ _id: new ObjectId(topicId) }, update);
 
