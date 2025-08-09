@@ -31,7 +31,7 @@ export class OnTopicScraped {
             const db = client.db(this.config.getDBName());
 
             // Update the topic, recording the last practice date
-            const result = await new TopicsStore(db, this.config).updateTopicMetadata(data.topicId, {numSections: data.numSections});
+            const result = await new TopicsStore(db, this.config).updateTopicMetadata(data.topicId, { numSections: data.numSections });
 
             logger.compute(cid, `Topic ${data.topicId} updated with number of sections [${data.numSections}]. Modified count: ${result}`)
 
