@@ -7,6 +7,9 @@ import { Practice } from "../../model/Practice";
 import { TopicsStore } from "../../store/TopicsStore";
 import { FlashcardsCreatedEvent } from "../model/FlashcardsCreatedEvent";
 import { FlashcardsAPI } from "../../api/FlashcardsAPI";
+import { RefreshTrackingRecord } from "../../model/RefreshTracking";
+import { TrackingStore } from "../../store/TrackingStore";
+import { isTopicGenerationComplete } from "../../util/RefreshTrackingUtil";
 
 export class OnFlashcardsCreated {
 
@@ -38,6 +41,9 @@ export class OnFlashcardsCreated {
             const db = client.db(this.config.getDBName());
 
             const topicStore = new TopicsStore(db, this.config);
+            const trackingStore = new TrackingStore(db, this.config);
+
+            await trackingStore.saveRecord(new RefreshTrackingRecord( eventPayload.topicId, eventPayload.sectionCode, eventPayload.type, eventPayload.count ));
 
             // 1. Retrieve the number of flashcards that the topic has so far
             const { flashcards } = await new FlashcardsAPI(this.execContext, req.headers.authorization as string).getFlashcards(eventPayload.topicId);
@@ -47,38 +53,24 @@ export class OnFlashcardsCreated {
 
             // 2. Check that if all sections have had flashcards created. We do that by counting the number of sections that have flashcards created and comparing that with the Topic's registered sections.
             // 2.1. Count the number of sections that have flashcards created
-            const sections = new Set<string>();
-            for (const flashcard of flashcards) {
-                sections.add(flashcard.sectionCode);
-            }
+            const sectionCodes = new Set(flashcards.map(f => f.sectionCode));
 
             // 2.2. Get the topic's number of sections
             const topic = await topicStore.findTopicById(eventPayload.topicId);
 
             const expectedNumSections = topic?.numSections;
-            const sectionsWithFlashcards = sections.size;
+            const sectionsWithFlashcards = sectionCodes.size;
 
             let isFlashcardComplete = false; 
             if (sectionsWithFlashcards === expectedNumSections) {
 
-                // 2.3. If the number of sections with flashcards matches the expected number, we check if all flashcard types are present for each section
-                isFlashcardComplete = true;
-                for (const sectionCode of sections) {
+                // Use the Tracking Utils to check if the flashcard generation is complete for the topic
+                // 1. Get the tracking records for the topic
+                const refreshTrackingRecords = await trackingStore.getRecordsByTopicId(eventPayload.topicId);
 
-                    // Check if all flashcard types are present for this section
-                    let sectionComplete = true;
-                    for (const flashcardType of flashcardTypes.generated) {
-                        if (!flashcards.some(f => f.sectionCode === sectionCode && f.type === flashcardType)) {
-                            sectionComplete = false;
-                            break;
-                        }
-                    }
+                // 2. Check if the flashcard generation is complete for all sections
+                isFlashcardComplete = isTopicGenerationComplete(Array.from(sectionCodes), flashcardTypes.generated, flashcards, refreshTrackingRecords!);
 
-                    if (!sectionComplete) {
-                        isFlashcardComplete = false;
-                        break;
-                    }
-                }
             }
 
             logger.compute(cid, `Topic ${eventPayload.topicId} has ${sectionsWithFlashcards} sections with flashcards, expected ${expectedNumSections}. Flashcard complete: ${isFlashcardComplete}`)

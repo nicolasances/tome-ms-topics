@@ -3,6 +3,7 @@ import { ControllerConfig } from "../../Config";
 import { TopicsStore } from "../../store/TopicsStore";
 import { ValidationError } from "toto-api-controller/dist/validation/Validator";
 import { TotoRuntimeError } from "toto-api-controller/dist/model/TotoRuntimeError";
+import { TrackingStore } from "../../store/TrackingStore";
 
 /**
  * When a topic has been scraped, this handler will update the topic with the number of sections in it and in general all information provided in the "topicScraped" event.
@@ -33,7 +34,10 @@ export class OnTopicScraped {
             // Update the topic, recording the last practice date
             const result = await new TopicsStore(db, this.config).updateTopicMetadata(data.topicId, { numSections: data.numSections });
 
-            logger.compute(cid, `Topic ${data.topicId} updated with number of sections [${data.numSections}]. Modified count: ${result}`)
+            // Delete all refresh tracking records for the topic
+            const deletedCount = await new TrackingStore(db, this.config).deleteAllRecords(data.topicId);
+
+            logger.compute(cid, `Topic ${data.topicId} updated with number of sections [${data.numSections}]. Modified count: ${result}. Deleted tracking records: ${deletedCount}`)
 
             return { processed: true }
 

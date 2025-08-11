@@ -99,7 +99,7 @@ export interface GetFlashcardTypesResponse {
     generated: string[];
 }
 
-type Flashcard = MultipleOptionsFlashcard | SectionTimelineFlashcard | DateFlashcard | GraphFlashcard;
+export type Flashcard = MultipleOptionsFlashcard | SectionTimelineFlashcard | DateFlashcard | GraphFlashcard;
 
 export interface GetFlashcardsResponse {
 
