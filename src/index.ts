@@ -1,4 +1,4 @@
-import { TotoAPIController } from "toto-api-controller";
+import { TotoAPIController } from "./apicontroller/TotoAPIController";
 import { ControllerConfig } from "./Config";
 import { PostTopic } from "./dlg/PostTopic";
 import { GetTopics } from "./dlg/GetTopics";
@@ -16,8 +16,10 @@ api.path('DELETE', '/topics/:id', new DeleteTopic());
 api.path('GET', '/topics/:topicId', new GetTopic());
 api.path('POST', '/topics/:topicId/refresh', new RefreshTopic()); 
 
-api.path('POST', '/events/practice', new OnPracticeEvent())
-api.path('POST', '/events/topic', new OnTopicEvent())
+api.registerPubSubEventHandler('topic', new OnTopicEvent());
+
+// api.path('POST', '/events/practice', new OnPracticeEvent())
+// api.path('POST', '/events/topic', new OnTopicEvent())
 
 api.init().then(() => {
     api.listen()

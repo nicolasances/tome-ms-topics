@@ -1,11 +1,6 @@
-import { TotoAuthProvider } from "./totoauth/TotoAuthProvider";
-import { MongoClient, ServerApiVersion } from 'mongodb';
-import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
-import { TotoControllerConfig } from "toto-api-controller/dist/model/TotoControllerConfig";
-import { CustomAuthVerifier } from "toto-api-controller/dist/model/CustomAuthVerifier";
-import { ValidatorProps } from "toto-api-controller/dist/model/ValidatorProps";
-
-const secretManagerClient = new SecretManagerServiceClient();
+import { MongoClient } from 'mongodb';
+import { Logger, SecretsManager, TotoControllerConfig } from "toto-api-controller";
+import { ValidatorProps } from "./apicontroller/TotoAPIController";
 
 const dbName = 'tometopics';
 const collections = {
@@ -15,54 +10,48 @@ const collections = {
 
 export class ControllerConfig implements TotoControllerConfig {
 
+    private env: string;
+    private hyperscaler: "aws" | "gcp" | "local";
+
+    logger: Logger | undefined;
     mongoUser: string | undefined;
     mongoPwd: string | undefined;
     mongoHost: string | undefined;
     expectedAudience: string | undefined;
     totoAuthEndpoint: string | undefined;
 
+    constructor() {
+
+        this.hyperscaler = process.env.HYPERSCALER == 'aws' ? 'aws' : (process.env.HYPERSCALER == 'gcp' ? 'gcp' : 'local');
+
+        let env = process.env.HYPERSCALER == 'aws' ? (process.env.ENVIRONMENT ?? 'dev') : process.env.GCP_PID;
+        if (!env) env = 'dev';
+        this.env = env;
+
+    }
+
 
     async load(): Promise<any> {
 
         let promises = [];
 
-        promises.push(secretManagerClient.accessSecretVersion({ name: `projects/${process.env.GCP_PID}/secrets/mongo-host/versions/latest` }).then(([version]) => {
+        const secretsManager = new SecretsManager(this.hyperscaler == 'local' ? 'gcp' : this.hyperscaler, this.env, this.logger!);  // Use GCP Secrets Manager when local
 
-            this.mongoHost = version.payload!.data!.toString();
-
+        promises.push(secretsManager.getSecret('mongo-host').then((value) => {
+            this.mongoHost = value;
         }));
-
-        promises.push(secretManagerClient.accessSecretVersion({ name: `projects/${process.env.GCP_PID}/secrets/toto-expected-audience/versions/latest` }).then(([version]) => {
-
-            this.expectedAudience = version.payload!.data!.toString();
-
+        promises.push(secretsManager.getSecret('toto-expected-audience').then((value) => {
+            this.expectedAudience = value;
         }));
-
-        promises.push(secretManagerClient.accessSecretVersion({ name: `projects/${process.env.GCP_PID}/secrets/tome-ms-topics-mongo-user/versions/latest` }).then(([version]) => {
-
-            this.mongoUser = version.payload!.data!.toString();
-
+        promises.push(secretsManager.getSecret('tome-ms-topics-mongo-user').then((value) => {
+            this.mongoUser = value;
         }));
-
-        promises.push(secretManagerClient.accessSecretVersion({ name: `projects/${process.env.GCP_PID}/secrets/tome-ms-topics-mongo-pswd/versions/latest` }).then(([version]) => {
-
-            this.mongoPwd = version.payload!.data!.toString();
-
+        promises.push(secretsManager.getSecret('tome-ms-topics-mongo-pswd').then((value) => {
+            this.mongoPwd = value;
         }));
-
-        promises.push(secretManagerClient.accessSecretVersion({ name: `projects/${process.env.GCP_PID}/secrets/toto-auth-endpoint/versions/latest` }).then(([version]) => {
-
-            this.totoAuthEndpoint = version.payload!.data!.toString();
-
-        }));
-
 
         await Promise.all(promises);
 
-    }
-
-    getCustomAuthVerifier(): CustomAuthVerifier {
-        return new TotoAuthProvider(String(this.totoAuthEndpoint))
     }
 
     getProps(): ValidatorProps {
@@ -79,11 +68,14 @@ export class ControllerConfig implements TotoControllerConfig {
 
         return await new MongoClient(mongoUrl).connect();
     }
-    
+
+    getSigningKey(): string {
+        throw new Error("Method not implemented.");
+    }
+
+
     getExpectedAudience(): string {
-        
         return String(this.expectedAudience)
-        
     }
 
     getDBName() { return dbName }
