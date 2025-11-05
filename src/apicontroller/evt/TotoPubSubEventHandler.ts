@@ -1,21 +1,5 @@
-import { Request } from "express";
-import { ExecutionContext, TotoDelegate } from "toto-api-controller";
-import { UserContext } from "../TotoAPIController";
-
-// export class TotoPubSubEventHandler implements TotoDelegate {
-
-//     constructor(private delegate: ITotoPubSubEventHandler) {}
-
-//     async onHTTPRequest(req: Request): Promise<any> {
-
-//         return this.delegate.do(msg, userContext, execContext);
-
-//     }
-// }
-
-export interface TotoMessage {
-    data: any;
-}
+import { ExecutionContext } from "../../apicontroller/model/ExecutionContext";
+import { TotoMessage } from "./TotoMessage";
 
 export interface ITotoPubSubEventHandler {
 

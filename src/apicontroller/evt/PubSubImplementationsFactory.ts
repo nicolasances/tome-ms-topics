@@ -11,9 +11,16 @@ export class PubSubImplementationsFactory {
 
     constructor(protected config: TotoControllerConfig, protected logger: Logger) {
 
-        this.registeredImplementations = [
-            // Add new PubSub implementations here
-        ]
+        this.registeredImplementations = []
+    }
+
+    /**
+     * Registers a new PubSub implementation to be used in the Toto API Controller.
+     * 
+     * @param impl an implementation of the APubSubImplementation interface
+     */
+    registerImplementation(impl: APubSubImplementation) {
+        this.registeredImplementations.push(impl);
     }
 
     getPubSubImplementation(req: Request): APubSubImplementation {

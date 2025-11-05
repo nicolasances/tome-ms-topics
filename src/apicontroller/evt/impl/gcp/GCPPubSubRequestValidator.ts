@@ -1,7 +1,7 @@
 import { Request } from "express";
-import { ValidationError } from "../../Validator";
-import { googleAuthCheck } from "../../GoogleAuthCheck";
-import { APubSubRequestValidator } from "../../../evt/APubSubRequestValidator";
+import { ValidationError } from "../../../validation/Validator";
+import { googleAuthCheck } from "../../../validation/GoogleAuthCheck";
+import { APubSubRequestValidator } from "../../PubSubImplementation";
 
 /**
  * Validator for HTTP Requests made by Google Cloud PubSub push infrastructure.

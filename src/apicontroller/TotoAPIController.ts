@@ -13,10 +13,16 @@ import { SmokeDelegate } from './dlg/SmokeDelegate';
 import { TotoRuntimeError } from './model/TotoRuntimeError';
 import { TotoPathOptions } from './model/TotoPathOptions';
 import path from 'path';
-import { ITotoPubSubEventHandler, TotoPubSubEventHandler } from './evt/TotoPubSubEventHandler';
+import { ITotoPubSubEventHandler } from './evt/TotoPubSubEventHandler';
 import { PubSubImplementationsFactory } from './evt/PubSubImplementationsFactory';
+import { APubSubImplementation } from './evt/PubSubImplementation';
+import { GCPPubSubImpl } from './evt/impl/gcp/GCPPubSubImpl';
+import { SNSImpl } from './evt/impl/aws/SNSImpl';
 
-export { TotoPubSubEventHandler } from './evt/TotoPubSubEventHandler';
+export { APubSubImplementation, APubSubRequestValidator } from './evt/PubSubImplementation'
+export { PubSubImplementationsFactory } from './evt/PubSubImplementationsFactory'
+export { TotoMessage } from './evt/TotoMessage'
+export { ITotoPubSubEventHandler } from './evt/TotoPubSubEventHandler'
 export { Logger } from './logger/TotoLogger'
 export { AUTH_PROVIDERS } from './model/AuthProviders'
 export { ExecutionContext } from './model/ExecutionContext'
@@ -29,10 +35,8 @@ export { ValidatorProps } from './model/ValidatorProps'
 export { correlationId } from './util/CorrelationId'
 export { SecretsManager } from './util/CrossCloudSecret'
 export { basicallyHandleError } from './util/ErrorUtil'
-export { GCPPubSubRequestValidator } from './validation/pubsub/impl/GCPPubSubRequestValidator';
-export { SNSRequestValidator } from './validation/pubsub/impl/SNSRequestValidator';
-export { APubSubRequestValidator } from './evt/APubSubRequestValidator';
-export { PubSubRequestValidatorFactory } from './validation/pubsub/PubSubRequestValidator';
+export { GCPPubSubRequestValidator } from './evt/impl/gcp/GCPPubSubRequestValidator';
+export { SNSRequestValidator } from './evt/impl/aws/SNSRequestValidator';
 export { googleAuthCheck } from './validation/GoogleAuthCheck'
 export { ConfigMock, LazyValidator, ValidationError, Validator } from './validation/Validator'
 
@@ -57,6 +61,7 @@ export class TotoAPIController {
     validator: Validator = new LazyValidator();
     config: TotoControllerConfig;
     options: TotoControllerOptions;
+    pubSubImplementationsFactory: PubSubImplementationsFactory;
 
     /**
      * The constructor requires the express app
@@ -75,6 +80,11 @@ export class TotoAPIController {
             basePath: options.basePath,
             port: options.port ?? 8080
         };
+
+        // Registering default PubSub implementations
+        this.pubSubImplementationsFactory = new PubSubImplementationsFactory(this.config, this.logger);
+        this.pubSubImplementationsFactory.registerImplementation(new GCPPubSubImpl(this.config, this.logger));
+        this.pubSubImplementationsFactory.registerImplementation(new SNSImpl(this.config, this.logger));
 
         this.config.logger = this.logger;
 
@@ -102,6 +112,15 @@ export class TotoAPIController {
         this.staticContent = this.staticContent.bind(this);
         this.fileUploadPath = this.fileUploadPath.bind(this);
         this.path = this.path.bind(this);
+    }
+
+    /**
+     * Registers a new PubSub implementation to be used in the Toto API Controller.
+     * 
+     * @param impl an implementation of APubSubImplementation
+     */
+    registerPubSubImplementation(impl: APubSubImplementation) {
+        this.pubSubImplementationsFactory.registerImplementation(impl);
     }
 
     async init() {
@@ -284,7 +303,7 @@ export class TotoAPIController {
                 this.logger.compute(cid, `Received event on resource ${resource}`);
 
                 // Find the right handler
-                const pubSubImpl = new PubSubImplementationsFactory(this.config, this.logger).getPubSubImplementation(req);
+                const pubSubImpl = this.pubSubImplementationsFactory.getPubSubImplementation(req);
 
                 // Validating
                 const isAuthorized = await pubSubImpl.getRequestValidator().isRequestAuthorized(req);
@@ -294,14 +313,11 @@ export class TotoAPIController {
                 // Build the context
                 const executionContext = new ExecutionContext(this.logger, this.apiName, this.config, cid)
 
-                // Get the handler 
-                const eventHandler = pubSubImpl.getEventHandler();
-
                 // Convert the HTTP Request into a message
                 const message = pubSubImpl.convertMessage(req);
 
                 // Execute the GET
-                const data = await eventHandler.onEvent(message, executionContext);
+                const data = await handler.onEvent(message, executionContext);
 
                 res.status(200).type('application/json').send(data);
 

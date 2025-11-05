@@ -1,7 +1,7 @@
 import { Request } from "express";
 import * as crypto from 'crypto';
 import * as https from 'https';
-import { APubSubRequestValidator } from "../../../evt/APubSubRequestValidator";
+import { APubSubRequestValidator } from "../../PubSubImplementation";
 
 export class SNSRequestValidator extends APubSubRequestValidator {
 

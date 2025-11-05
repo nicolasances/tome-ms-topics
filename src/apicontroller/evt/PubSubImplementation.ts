@@ -1,6 +1,6 @@
 import { Request } from "express";
 import { Logger, TotoControllerConfig } from "../TotoAPIController";
-import { ITotoPubSubEventHandler, TotoMessage } from "./TotoPubSubEventHandler";
+import { TotoMessage } from "./TotoMessage";
 
 export abstract class APubSubImplementation {
 
@@ -10,11 +10,6 @@ export abstract class APubSubImplementation {
      * Gets the Request Validator for this PubSub implementation.
      */
     abstract getRequestValidator(): APubSubRequestValidator;
-
-    /**
-     * Gets the Event Handler for this PubSub implementation.
-     */
-    abstract getEventHandler(): ITotoPubSubEventHandler;
 
     /**
      * Converts the incoming HTTP request from the PubSub infrastructure message format to a TotoMessage.
