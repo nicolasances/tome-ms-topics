@@ -12,9 +12,19 @@ export class SNSImpl extends APubSubImplementation {
 
     convertMessage(req: Request): TotoMessage {
 
+        if (req.get('x-amz-sns-message-type') == 'SubscriptionConfirmation' || req.get('x-amz-sns-message-type') == 'UnsubscribeConfirmation') {
+
+            this.logger.compute('', `Confirming SNS subscription/unsubscription message.`);
+
+            return {
+                type: req.get('x-amz-sns-message-type')!,
+                data: req.body
+            }
+        }
+
         const message = req.body;
 
-        if (message.Type == 'SubscriptionConfirmation' || message.Type == 'UnsubscribeConfirmation') return {type: message.Type, data: message};
+        if (message.Type == 'SubscriptionConfirmation' || message.Type == 'UnsubscribeConfirmation') return { type: message.Type, data: message };
 
         if (message.Type == 'Notification') {
 
@@ -23,7 +33,7 @@ export class SNSImpl extends APubSubImplementation {
                 const payload = JSON.parse(message.Message);
 
                 return {
-                    type: payload.type, 
+                    type: payload.type,
                     data: payload.data
                 }
 
@@ -35,13 +45,13 @@ export class SNSImpl extends APubSubImplementation {
                     this.logger.compute('', `SNS message is not a valid JSON: ${message.Message}`);
 
                     console.log(error)
-                    
+
                     throw new ValidationError(400, 'SNS message is not a valid JSON');
-                    
+
                 }
 
                 throw error;
-                
+
             }
         }
 
