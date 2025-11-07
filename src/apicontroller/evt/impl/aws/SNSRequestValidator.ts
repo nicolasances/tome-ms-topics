@@ -10,13 +10,13 @@ export class SNSRequestValidator extends APubSubRequestValidator {
         // Check if the x-amz-sns-message-type header is present 
         if (req.get('x-amz-sns-message-type')) {
 
-            this.logger.compute('', 'Received SNS request with header x-amz-sns-message-type: ${req.get("x-amz-sns-message-type")}');
+            this.logger.compute('', `Received SNS request with header x-amz-sns-message-type: ${req.get("x-amz-sns-message-type")}`);
 
             if (req.get('x-amz-sns-message-type') == 'SubscriptionConfirmation' || req.get('x-amz-sns-message-type') == 'UnsubscribeConfirmation' || req.get('x-amz-sns-message-type') == 'Notification') return true;
-        
+
         }
-        
-        return false; 
+
+        return false;
 
         // const message = req.body;
 
@@ -29,6 +29,16 @@ export class SNSRequestValidator extends APubSubRequestValidator {
     async isRequestAuthorized(req: Request): Promise<boolean> {
 
         try {
+
+            // Check if the x-amz-sns-message-type header is present 
+            if (req.get('x-amz-sns-message-type')) {
+
+                this.logger.compute('', `Received SNS request with header x-amz-sns-message-type: ${req.get("x-amz-sns-message-type")}`);
+
+                if (req.get('x-amz-sns-message-type') == 'SubscriptionConfirmation' || req.get('x-amz-sns-message-type') == 'UnsubscribeConfirmation' || req.get('x-amz-sns-message-type') == 'Notification') return true;
+
+            }
+            
             const message = req.body;
 
             // 1. Verify message has required fields
