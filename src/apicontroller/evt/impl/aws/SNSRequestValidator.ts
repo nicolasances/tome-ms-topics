@@ -7,11 +7,22 @@ export class SNSRequestValidator extends APubSubRequestValidator {
 
     isRequestRecognized(req: Request): boolean {
 
-        const message = req.body;
+        // Check if the x-amz-sns-message-type header is present 
+        if (req.get('x-amz-sns-message-type')) {
 
-        if (!message || !message.Type || !message.Signature || !message.SigningCertURL) return false;
+            this.logger.compute('', 'Received SNS request with header x-amz-sns-message-type: ${req.get("x-amz-sns-message-type")}');
 
-        return this.isValidCertUrl(message.SigningCertURL);
+            if (req.get('x-amz-sns-message-type') == 'SubscriptionConfirmation' || req.get('x-amz-sns-message-type') == 'UnsubscribeConfirmation' || req.get('x-amz-sns-message-type') == 'Notification') return true;
+        
+        }
+        
+        return false; 
+
+        // const message = req.body;
+
+        // if (!message || !message.Type || !message.Signature || !message.SigningCertURL) return false;
+
+        // return this.isValidCertUrl(message.SigningCertURL);
 
     }
 
