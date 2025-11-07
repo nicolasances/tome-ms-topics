@@ -293,37 +293,6 @@ export class TotoAPIController {
         // Make sure that the basePath does not end with "/". If it does remove it. 
         const correctedPath = (this.options.basePath && (!options || !options.ignoreBasePath)) ? this.options.basePath.replace(/\/$/, '').trim() + path : path;
 
-        // Middleware to handle text/plain content type from e.g. AWS SNS
-        // AWS SNS sends SubscriptionConfirmation with text/plain but the body is actually JSON
-        const parseTextAsJson = (req: Request, res: Response, next: any) => {
-
-            const contentType = req.get('content-type') || '';
-            
-            // If it's text/plain (e.g. AWS SNS does that), parse it as JSON
-            if (contentType.includes('text/plain')) {
-
-                bodyParser.text({ type: 'text/plain' })(req, res, (err) => {
-                    
-                    if (err) return next(err);
-                    
-                    try {
-                        // Parse the text body as JSON
-                        if (typeof req.body === 'string') {
-                            req.body = JSON.parse(req.body);
-                        }
-                        next();
-                    } catch (parseError) {
-                        this.logger.compute('', `Failed to parse SNS text/plain body as JSON: ${parseError}`, 'error');
-                        next(parseError);
-                    }
-                });
-
-            } 
-            else {
-                // For other content types, continue normally (bodyParser.json() already handled it)
-                next();
-            }
-        };
 
         const handleRequest = async (req: Request, res: Response) => {
 
@@ -344,6 +313,15 @@ export class TotoAPIController {
 
                 // Build the context
                 const executionContext = new ExecutionContext(this.logger, this.apiName, this.config, cid)
+
+                // If the message is not destined to the handler (e.g. message that needs to be intercepted by a filter), then let the filter handle it
+                const filter = pubSubImpl.filter(req);
+
+                if (filter) {
+
+                    return await filter.handle(req);
+                    
+                }
 
                 // Convert the HTTP Request into a message
                 const message = pubSubImpl.convertMessage(req);
@@ -454,3 +432,36 @@ export class TotoAPIController {
 
     }
 }
+
+
+// Middleware to handle text/plain content type from e.g. AWS SNS
+// AWS SNS sends SubscriptionConfirmation with text/plain but the body is actually JSON
+const parseTextAsJson = (req: Request, res: Response, next: any) => {
+
+    const contentType = req.get('content-type') || '';
+
+    // If it's text/plain (e.g. AWS SNS does that), parse it as JSON
+    if (contentType.includes('text/plain')) {
+
+        bodyParser.text({ type: 'text/plain' })(req, res, (err) => {
+
+            if (err) return next(err);
+
+            try {
+                // Parse the text body as JSON
+                if (typeof req.body === 'string') {
+                    req.body = JSON.parse(req.body);
+                }
+                next();
+            } catch (parseError) {
+                console.log(`Failed to parse SNS text/plain body as JSON: ${parseError}`, 'error');
+                next(parseError);
+            }
+        });
+
+    }
+    else {
+        // For other content types, continue normally (bodyParser.json() already handled it)
+        next();
+    }
+};

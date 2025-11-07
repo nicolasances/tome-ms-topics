@@ -17,6 +17,20 @@ export abstract class APubSubImplementation {
      * @param req the HTTP request received from the PubSub infrastructure (e.g. GCP PubSub, AWS SNS...)
      */
     abstract convertMessage(req: Request): TotoMessage; 
+
+    /**
+     * Allows the pubSub implementation to filter incoming requests that should not be processed by the main event handler.
+     * 
+     * For example, in AWS SNS, subscription confirmation requests need to be handled separately from the main event processing and should not clutter application code.
+     * 
+     * @param req the HTTP Request from the pubsub infrastructure
+     */
+    abstract filter(req: Request): APubSubRequestFilter | null;
+
+}
+
+export interface APubSubRequestFilter {
+    handle(req: Request): Promise<void>;
 }
 
 export abstract class APubSubRequestValidator {

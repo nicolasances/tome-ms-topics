@@ -45,9 +45,6 @@ export class SNSRequestValidator extends APubSubRequestValidator {
                 return false;
             }
 
-            console.log(message);
-
-
             // 2. Verify the certificate URL is from AWS
             // if (!this.isValidCertUrl(message.SigningCertURL)) {
             //     this.logger.compute('', 'Invalid SNS certificate URL');

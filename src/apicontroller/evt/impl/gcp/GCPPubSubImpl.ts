@@ -1,10 +1,14 @@
 import { Request } from "express";
-import { APubSubImplementation, APubSubRequestValidator } from "../../PubSubImplementation";
+import { APubSubImplementation, APubSubRequestFilter, APubSubRequestValidator } from "../../PubSubImplementation";
 import { GCPPubSubRequestValidator } from "./GCPPubSubRequestValidator";
 import { TotoMessage } from "../../TotoMessage";
 
 
 export class GCPPubSubImpl extends APubSubImplementation {
+    
+    filter(req: Request): APubSubRequestFilter | null {
+        return null;
+    }
 
     getRequestValidator(): APubSubRequestValidator {
         return new GCPPubSubRequestValidator(this.config, this.logger);
