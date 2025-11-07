@@ -293,6 +293,38 @@ export class TotoAPIController {
         // Make sure that the basePath does not end with "/". If it does remove it. 
         const correctedPath = (this.options.basePath && (!options || !options.ignoreBasePath)) ? this.options.basePath.replace(/\/$/, '').trim() + path : path;
 
+        // Middleware to handle text/plain content type from e.g. AWS SNS
+        // AWS SNS sends SubscriptionConfirmation with text/plain but the body is actually JSON
+        const parseTextAsJson = (req: Request, res: Response, next: any) => {
+
+            const contentType = req.get('content-type') || '';
+            
+            // If it's text/plain (e.g. AWS SNS does that), parse it as JSON
+            if (contentType.includes('text/plain')) {
+
+                bodyParser.text({ type: 'text/plain' })(req, res, (err) => {
+                    
+                    if (err) return next(err);
+                    
+                    try {
+                        // Parse the text body as JSON
+                        if (typeof req.body === 'string') {
+                            req.body = JSON.parse(req.body);
+                        }
+                        next();
+                    } catch (parseError) {
+                        this.logger.compute('', `Failed to parse SNS text/plain body as JSON: ${parseError}`, 'error');
+                        next(parseError);
+                    }
+                });
+
+            } 
+            else {
+                // For other content types, continue normally (bodyParser.json() already handled it)
+                next();
+            }
+        };
+
         const handleRequest = async (req: Request, res: Response) => {
 
             const cid = req.get('x-correlation-id') || uuidv4();
@@ -336,7 +368,8 @@ export class TotoAPIController {
             }
         }
 
-        this.app.post(correctedPath, handleRequest);
+        // Register the route with the custom middleware
+        this.app.post(correctedPath, parseTextAsJson, handleRequest);
 
         // Log the added path
         console.log('[' + this.apiName + '] - Successfully added event handler POST ' + correctedPath);
