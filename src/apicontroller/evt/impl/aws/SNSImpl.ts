@@ -3,7 +3,7 @@ import { APubSubImplementation, APubSubRequestFilter, APubSubRequestValidator } 
 import { TotoMessage } from "../../TotoMessage";
 import { SNSRequestValidator } from "./SNSRequestValidator";
 import { Logger, ValidationError } from "../../../TotoAPIController";
-import http from "http";
+import https from "https";
 
 export class SNSImpl extends APubSubImplementation {
 
@@ -82,7 +82,7 @@ class SNSSubscriptionConfirmationFilter implements APubSubRequestFilter {
 
         this.logger.compute('', `Confirming SNS subscription: ${subscribeUrl}`);
 
-        http.get(subscribeUrl, {}, (response) => {
+        https.get(subscribeUrl, {}, (response) => {
 
             if (response.statusCode === 200) {
                 this.logger.compute('', `SNS subscription confirmed successfully.`);
