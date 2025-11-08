@@ -1,10 +1,10 @@
 import { ExecutionContext } from "toto-api-controller/dist/model/ExecutionContext";
-import { Request } from "express";
 import { TotoRuntimeError } from "toto-api-controller/dist/model/TotoRuntimeError";
 import { ControllerConfig } from "../../Config";
 import { ValidationError } from "toto-api-controller/dist/validation/Validator";
 import { Practice } from "../../model/Practice";
 import { TopicsStore } from "../../store/TopicsStore";
+import { TotoMessage } from "../../apicontroller/TotoAPIController";
 
 export class OnPracticeFinished {
 
@@ -16,9 +16,7 @@ export class OnPracticeFinished {
         this.config = execContext.config as ControllerConfig;
     }
 
-    async do(req: Request) {
-
-        let msg = JSON.parse(String(Buffer.from(req.body.message.data, 'base64')))
+    async do(msg: TotoMessage) {
 
         const logger = this.execContext.logger;
         const cid = msg.cid;

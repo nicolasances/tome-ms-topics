@@ -17,9 +17,7 @@ api.path('GET', '/topics/:topicId', new GetTopic());
 api.path('POST', '/topics/:topicId/refresh', new RefreshTopic()); 
 
 api.registerPubSubEventHandler('topic', new OnTopicEvent());
-
-// api.path('POST', '/events/practice', new OnPracticeEvent())
-// api.path('POST', '/events/topic', new OnTopicEvent())
+api.registerPubSubEventHandler('practice', new OnPracticeEvent());
 
 api.init().then(() => {
     api.listen()
