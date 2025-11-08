@@ -182,6 +182,10 @@ export class ConfigMock implements TotoControllerConfig {
     this.logger = new Logger("ConfigMock");
   }
 
+  getAPIName(): string {
+    return "fake-api"
+  }
+
   getSigningKey(): string {
     return "fake-key";
   }

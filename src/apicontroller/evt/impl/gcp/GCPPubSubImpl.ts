@@ -19,7 +19,11 @@ export class GCPPubSubImpl extends APubSubImplementation {
         let msg = JSON.parse(String(Buffer.from(req.body.message.data, 'base64')))
 
         return {
+            timestamp: msg.timestamp,
+            cid: msg.cid,
+            id: msg.id,
             type: msg.type,
+            msg: msg.msg,
             data: msg.data
         }
     }

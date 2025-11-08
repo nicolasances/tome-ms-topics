@@ -4,6 +4,7 @@ import { TotoMessage } from "../../TotoMessage";
 import { SNSRequestValidator } from "./SNSRequestValidator";
 import { Logger, ValidationError } from "../../../TotoAPIController";
 import https from "https";
+import moment from "moment-timezone";
 
 export class SNSImpl extends APubSubImplementation {
 
@@ -26,14 +27,25 @@ export class SNSImpl extends APubSubImplementation {
             this.logger.compute('', `Confirming SNS subscription/unsubscription message.`);
 
             return {
+                timestamp: moment().tz('Europe/Rome').format("YYYY.MM.DD HH:mm:ss"),
+                cid: '',
+                id: '',
                 type: req.get('x-amz-sns-message-type')!,
+                msg: '',
                 data: req.body
             }
         }
 
         const message = req.body;
 
-        if (message.Type == 'SubscriptionConfirmation' || message.Type == 'UnsubscribeConfirmation') return { type: message.Type, data: message };
+        if (message.Type == 'SubscriptionConfirmation' || message.Type == 'UnsubscribeConfirmation') return {
+            timestamp: moment().tz('Europe/Rome').format("YYYY.MM.DD HH:mm:ss"),
+            cid: '',
+            id: '',
+            type: message.Type,
+            msg: '',
+            data: message
+        };
 
         if (message.Type == 'Notification') {
 
@@ -42,7 +54,11 @@ export class SNSImpl extends APubSubImplementation {
                 const payload = JSON.parse(message.Message);
 
                 return {
+                    timestamp: payload.timestamp,
+                    cid: payload.cid,
+                    id: payload.id,
                     type: payload.type,
+                    msg: payload.msg,
                     data: payload.data
                 }
 
