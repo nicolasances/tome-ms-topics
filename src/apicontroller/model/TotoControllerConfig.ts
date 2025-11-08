@@ -28,4 +28,9 @@ export interface TotoControllerConfig {
      */
     getExpectedAudience(): string
 
+    /**
+     * Returns the name of the API (service, microservice) managed by this controller.
+     */
+    getAPIName(): string
+
 }

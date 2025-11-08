@@ -4,6 +4,7 @@ import { TopicsStore } from "../../store/TopicsStore";
 import { ValidationError } from "toto-api-controller/dist/validation/Validator";
 import { TotoRuntimeError } from "toto-api-controller/dist/model/TotoRuntimeError";
 import { TrackingStore } from "../../store/TrackingStore";
+import { TotoMessage } from "../../apicontroller/TotoAPIController";
 
 /**
  * When a topic has been scraped, this handler will update the topic with the number of sections in it and in general all information provided in the "topicScraped" event.
@@ -19,10 +20,11 @@ export class OnTopicScraped {
         this.config = execContext.config as ControllerConfig;
     }
 
-    async do(data: OnTopicScrapedMsgPayload) {
+    async do(msg: TotoMessage) {
 
         const logger = this.execContext.logger;
-        const cid = this.execContext.cid;
+        const cid = msg.cid;
+        const data = msg.data as OnTopicScrapedMsgPayload;
 
         let client;
 

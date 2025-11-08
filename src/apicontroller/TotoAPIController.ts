@@ -69,11 +69,11 @@ export class TotoAPIController {
      * - apiName              : (mandatory) - the name of the api (e.g. expenses)
      * - config               : (mandatory) - a TotoControllerConfig instance
      */
-    constructor(apiName: string, config: TotoControllerConfig, options: TotoControllerOptions = new TotoControllerOptions()) {
+    constructor(config: TotoControllerConfig, options: TotoControllerOptions = new TotoControllerOptions()) {
 
         this.app = express();
-        this.apiName = apiName;
-        this.logger = new Logger(apiName)
+        this.apiName = config.getAPIName();
+        this.logger = new Logger(this.apiName)
         this.config = config;
         this.options = {
             debugMode: options.debugMode ?? false,

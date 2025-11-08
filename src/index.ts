@@ -8,7 +8,7 @@ import { OnPracticeEvent } from "./evt/OnPracticeEvent";
 import { OnTopicEvent } from "./evt/OnTopicEvent";
 import { RefreshTopic } from "./dlg/RefreshTopic";
 
-const api = new TotoAPIController("tome-ms-topics", new ControllerConfig())
+const api = new TotoAPIController(new ControllerConfig({apiName: "tome-ms-topics"}));
 
 api.path('POST', '/topics', new PostTopic());
 api.path('GET', '/topics', new GetTopics());

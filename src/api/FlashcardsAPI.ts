@@ -9,10 +9,10 @@ export class FlashcardsAPI {
     cid: string | undefined;
     authHeader: string;
 
-    constructor(execContext: ExecutionContext, authHeader: string) {
+    constructor(execContext: ExecutionContext, jwtToken: string) {
         this.endpoint = String(process.env['TOME_FLASHCARDS_API_ENDPOINT']);
         this.cid = execContext.cid;
-        this.authHeader = authHeader;
+        this.authHeader = `Bearer ${jwtToken}`;
     }
 
     /**

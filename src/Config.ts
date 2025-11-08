@@ -1,6 +1,5 @@
 import { MongoClient } from 'mongodb';
-import { Logger, SecretsManager, TotoControllerConfig } from "toto-api-controller";
-import { ValidatorProps } from "./apicontroller/TotoAPIController";
+import { Logger, SecretsManager, TotoControllerConfig, ValidatorProps } from "./apicontroller/TotoAPIController";
 
 const dbName = 'tometopics';
 const collections = {
@@ -19,8 +18,9 @@ export class ControllerConfig implements TotoControllerConfig {
     mongoHost: string | undefined;
     expectedAudience: string | undefined;
     totoAuthEndpoint: string | undefined;
+    configuration: ConfigurationData;
 
-    constructor() {
+    constructor(configuration: ConfigurationData) {
 
         this.hyperscaler = process.env.HYPERSCALER == 'aws' ? 'aws' : (process.env.HYPERSCALER == 'gcp' ? 'gcp' : 'local');
 
@@ -28,6 +28,12 @@ export class ControllerConfig implements TotoControllerConfig {
         if (!env) env = 'dev';
         this.env = env;
 
+        this.configuration = configuration;
+
+    }
+
+    getAPIName(): string {
+        return this.configuration.apiName;
     }
 
 
@@ -64,7 +70,7 @@ export class ControllerConfig implements TotoControllerConfig {
     async getMongoClient() {
 
         // Use 'admin' as the authentication database; change if needed
-        const mongoUrl = `mongodb://${this.mongoUser}:${this.mongoPwd}@${this.mongoHost}:27017/?authSource=${dbName}`
+        const mongoUrl = `mongodb://${this.mongoUser}:${this.mongoPwd}@${this.mongoHost}:27017/?authSource=${dbName}`;
 
         return await new MongoClient(mongoUrl).connect();
     }
@@ -81,4 +87,8 @@ export class ControllerConfig implements TotoControllerConfig {
     getDBName() { return dbName }
     getCollections() { return collections }
 
+}
+
+interface ConfigurationData {
+    apiName: string;
 }
