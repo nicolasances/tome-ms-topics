@@ -16,7 +16,7 @@ export class OnTopicEvent implements ITotoPubSubEventHandler {
         logger.compute(cid, `Received event ${JSON.stringify(msg)}`)
 
         if (msg.type == EVENTS.flashcardsCreated) return await new OnFlashcardsCreated(execContext).do(msg);
-        else if (msg.type == EVENTS.topicScraped) return await new OnTopicScraped(execContext).do(msg.data);
+        else if (msg.type == EVENTS.topicScraped) return await new OnTopicScraped(execContext).do(msg);
 
         logger.compute(cid, `Event ${msg.type} is not handled by this service. Ignoring.`);
 
