@@ -113,7 +113,7 @@ export class Validator {
 
         if (this.debugMode === true) this.logger.compute(cid, `[Validator Debug] - Expected Audience: [${expectedAudience}]`)
 
-        if (this.config.getProps().customAuthProvider && authProvider.toLowerCase() == this.config.getProps().customAuthProvider!.toLowerCase()) {
+        if (authProvider.toLowerCase() == AUTH_PROVIDERS.toto) {
 
           if (this.debugMode === true) this.logger.compute(cid, `[Validator Debug] - Using Custom Auth Provider ${this.config.getProps().customAuthProvider}]. Verifying token`);
 

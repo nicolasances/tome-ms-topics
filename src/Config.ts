@@ -19,6 +19,7 @@ export class ControllerConfig implements TotoControllerConfig {
     expectedAudience: string | undefined;
     totoAuthEndpoint: string | undefined;
     configuration: ConfigurationData;
+    jwtSigningKey: string | undefined;
 
     constructor(configuration: ConfigurationData) {
 
@@ -45,6 +46,9 @@ export class ControllerConfig implements TotoControllerConfig {
 
         promises.push(secretsManager.getSecret('mongo-host').then((value) => {
             this.mongoHost = value;
+        }));
+        promises.push(secretsManager.getSecret('jwt-signing-key').then((value) => {
+            this.jwtSigningKey = value;
         }));
         promises.push(secretsManager.getSecret('toto-expected-audience').then((value) => {
             this.expectedAudience = value;
@@ -75,13 +79,12 @@ export class ControllerConfig implements TotoControllerConfig {
         return await new MongoClient(mongoUrl).connect();
     }
 
-    getSigningKey(): string {
-        throw new Error("Method not implemented.");
-    }
-
-
     getExpectedAudience(): string {
         return String(this.expectedAudience)
+    }
+
+    getSigningKey(): string {
+        return this.jwtSigningKey!;
     }
 
     getDBName() { return dbName }
