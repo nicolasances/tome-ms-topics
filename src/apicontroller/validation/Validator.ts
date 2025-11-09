@@ -174,16 +174,10 @@ export class LazyValidator extends Validator {
 
 }
 
-export class ConfigMock implements TotoControllerConfig {
+export class ConfigMock extends TotoControllerConfig {
   
-  logger: Logger;
-
   constructor() {
-    this.logger = new Logger("ConfigMock");
-  }
-
-  getAPIName(): string {
-    return "fake-api"
+    super({apiName: "fake-api"});
   }
 
   getSigningKey(): string {

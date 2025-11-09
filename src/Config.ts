@@ -1,5 +1,5 @@
 import { MongoClient } from 'mongodb';
-import { Logger, SecretsManager, TotoControllerConfig, ValidatorProps } from "./apicontroller/TotoAPIController";
+import { ConfigurationData, Logger, SecretsManager, TotoControllerConfig, ValidatorProps } from "./apicontroller/TotoAPIController";
 
 const dbName = 'tometopics';
 const collections = {
@@ -7,52 +7,25 @@ const collections = {
     tracking: 'tracking'
 };
 
-export class ControllerConfig implements TotoControllerConfig {
+export class ControllerConfig extends TotoControllerConfig {
 
-    private env: string;
-    private hyperscaler: "aws" | "gcp" | "local";
-
-    logger: Logger | undefined;
     mongoUser: string | undefined;
     mongoPwd: string | undefined;
-    mongoHost: string | undefined;
-    expectedAudience: string | undefined;
-    totoAuthEndpoint: string | undefined;
-    configuration: ConfigurationData;
-    jwtSigningKey: string | undefined;
 
     constructor(configuration: ConfigurationData) {
 
-        this.hyperscaler = process.env.HYPERSCALER == 'aws' ? 'aws' : (process.env.HYPERSCALER == 'gcp' ? 'gcp' : 'local');
-
-        let env = process.env.HYPERSCALER == 'aws' ? (process.env.ENVIRONMENT ?? 'dev') : process.env.GCP_PID;
-        if (!env) env = 'dev';
-        this.env = env;
-
-        this.configuration = configuration;
+        super(configuration);
 
     }
-
-    getAPIName(): string {
-        return this.configuration.apiName;
-    }
-
 
     async load(): Promise<any> {
-
+        
         let promises = [];
 
         const secretsManager = new SecretsManager(this.hyperscaler == 'local' ? 'gcp' : this.hyperscaler, this.env, this.logger!);  // Use GCP Secrets Manager when local
 
-        promises.push(secretsManager.getSecret('mongo-host').then((value) => {
-            this.mongoHost = value;
-        }));
-        promises.push(secretsManager.getSecret('jwt-signing-key').then((value) => {
-            this.jwtSigningKey = value;
-        }));
-        promises.push(secretsManager.getSecret('toto-expected-audience').then((value) => {
-            this.expectedAudience = value;
-        }));
+        promises.push(super.load());
+
         promises.push(secretsManager.getSecret('tome-ms-topics-mongo-user').then((value) => {
             this.mongoUser = value;
         }));
@@ -79,19 +52,7 @@ export class ControllerConfig implements TotoControllerConfig {
         return await new MongoClient(mongoUrl).connect();
     }
 
-    getExpectedAudience(): string {
-        return String(this.expectedAudience)
-    }
-
-    getSigningKey(): string {
-        return this.jwtSigningKey!;
-    }
-
     getDBName() { return dbName }
     getCollections() { return collections }
 
-}
-
-interface ConfigurationData {
-    apiName: string;
 }
