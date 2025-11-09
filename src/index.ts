@@ -1,4 +1,3 @@
-import { TotoAPIController } from "./apicontroller/TotoAPIController";
 import { ControllerConfig } from "./Config";
 import { PostTopic } from "./dlg/PostTopic";
 import { GetTopics } from "./dlg/GetTopics";
@@ -7,6 +6,7 @@ import { GetTopic } from "./dlg/GetTopic";
 import { OnPracticeEvent } from "./evt/OnPracticeEvent";
 import { OnTopicEvent } from "./evt/OnTopicEvent";
 import { RefreshTopic } from "./dlg/RefreshTopic";
+import { TotoAPIController } from "toto-api-controller";
 
 const api = new TotoAPIController(new ControllerConfig({apiName: "tome-ms-topics"}), {basePath: '/tometopics'});
 

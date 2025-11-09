@@ -4,7 +4,7 @@ import { ControllerConfig } from "../../Config";
 import { ValidationError } from "toto-api-controller/dist/validation/Validator";
 import { Practice } from "../../model/Practice";
 import { TopicsStore } from "../../store/TopicsStore";
-import { TotoMessage } from "../../apicontroller/TotoAPIController";
+import { TotoMessage } from "toto-api-controller";
 
 export class OnPracticeFinished {
 

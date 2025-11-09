@@ -1,5 +1,5 @@
 import { MongoClient } from 'mongodb';
-import { ConfigurationData, Logger, SecretsManager, TotoControllerConfig, ValidatorProps } from "./apicontroller/TotoAPIController";
+import { ConfigurationData, Logger, SecretsManager, TotoControllerConfig, ValidatorProps } from "toto-api-controller";
 
 const dbName = 'tometopics';
 const collections = {
