@@ -34,7 +34,7 @@ export class OnTopicScraped {
             const db = client.db(this.config.getDBName());
 
             // Update the topic, recording the last practice date
-            const result = await new TopicsStore(db, this.config).updateTopicMetadata(data.topicId, { numSections: data.numSections });
+            const result = await new TopicsStore(db, this.config).updateTopicMetadata(data.topicId, { sections: data.sections, numSections: data.numSections });
 
             // Delete all refresh tracking records for the topic
             const deletedCount = await new TrackingStore(db, this.config).deleteAllRecords(data.topicId);
@@ -68,6 +68,7 @@ export class OnTopicScraped {
 interface OnTopicScrapedMsgPayload {
     topicId: string;
     topicCode: string;
+    sections: string[];
     numSections: number;
     user: string;
 }
