@@ -76,13 +76,14 @@ export class TopicsStore {
      * @param topicId the topic id
      * @returns 
      */
-    async updateTopicMetadata(topicId: string, { sections, numSections, flashcardsGenerationComplete }: { sections?: string[], numSections?: number, flashcardsGenerationComplete?: boolean }): Promise<number> {
+    async updateTopicMetadata(topicId: string, { topicCode, sections, numSections, flashcardsGenerationComplete }: { topicCode?: string, sections?: string[], numSections?: number, flashcardsGenerationComplete?: boolean }): Promise<number> {
 
         const update = { $set: {} } as any;
 
         if (numSections != null) update.$set.numSections = numSections;
         if (flashcardsGenerationComplete !== null) update.$set.isFlashcardGenerationComplete = flashcardsGenerationComplete;
         if (sections !== null) update.$set.sections = sections;
+        if (topicCode !== null) update.$set.topicCode = topicCode;
 
         const result = await this.db.collection(this.topicsCollection).updateOne({ _id: new ObjectId(topicId) }, update);
 

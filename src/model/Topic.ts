@@ -3,7 +3,7 @@ import { WithId } from "mongodb";
 export class Topic {
 
     id?: string; 
-    topicCode: string;
+    topicCode?: string;
     name: string; 
     blogURL: string; 
     createdOn: string; // Date in format YYYYMMDD
@@ -15,7 +15,7 @@ export class Topic {
     numSections?: number; // Number of sections in the topic
     sections?: string[]; // Section codes in the topic
 
-    constructor(topicCode: string, name: string, blogURL: string, createdOn: string, user: string, lastPracticed?: string, generation?: string, flashcardsCount?: number, numSections?: number, flashcardsGenerationComplete?: boolean, sections?: string[]) {
+    constructor(name: string, blogURL: string, createdOn: string, user: string, lastPracticed?: string, generation?: string, flashcardsCount?: number, numSections?: number, flashcardsGenerationComplete?: boolean, topicCode?: string, sections?: string[]) {
         this.topicCode = topicCode;
         this.name = name;
         this.blogURL = blogURL;
@@ -31,7 +31,7 @@ export class Topic {
 
     static fromBSON(data: WithId<any>): Topic {
         
-        let topic = new Topic(data.topicCode, data.name, data.blogURL, data.createdOn, data.user, data.lastPracticed, data.generation, data.flashcardsCount, data.numSections, data.isFlashcardGenerationComplete, data.sections);
+        let topic = new Topic(data.name, data.blogURL, data.createdOn, data.user, data.lastPracticed, data.generation, data.flashcardsCount, data.numSections, data.isFlashcardGenerationComplete, data.topicCode, data.sections);
         topic.id = data._id; 
 
         return topic;
