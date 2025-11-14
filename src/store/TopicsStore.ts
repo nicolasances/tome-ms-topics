@@ -26,9 +26,9 @@ export class TopicsStore {
     /**
      * Finds a topic by its ID for a given user.
      */
-    async findTopicById(id: string, user: string): Promise<Topic | null> {
+    async findTopicById(id: string): Promise<Topic | null> {
 
-        const result = await this.db.collection(this.topicsCollection).findOne({ _id: new ObjectId(id), user: user });
+        const result = await this.db.collection(this.topicsCollection).findOne({ _id: new ObjectId(id) });
 
         if (!result) return null;
 
@@ -67,6 +67,40 @@ export class TopicsStore {
     async updateTopicLastPractice(topicId: string, practice: Practice): Promise<number> {
 
         const result = await this.db.collection(this.topicsCollection).updateOne({ _id: new ObjectId(topicId) }, { $set: { lastPracticed: practice.finishedOn } })
+
+        return result.modifiedCount;
+    }
+
+    /**
+     * Updates the metadata of a topic.
+     * @param topicId the topic id
+     * @returns 
+     */
+    async updateTopicMetadata(topicId: string, { topicCode, sections, numSections, flashcardsGenerationComplete }: { topicCode?: string, sections?: string[], numSections?: number, flashcardsGenerationComplete?: boolean }): Promise<number> {
+
+        const update = { $set: {} } as any;
+
+        if (numSections != null) update.$set.numSections = numSections;
+        if (flashcardsGenerationComplete !== null) update.$set.isFlashcardGenerationComplete = flashcardsGenerationComplete;
+        if (sections !== null) update.$set.sections = sections;
+        if (topicCode !== null) update.$set.topicCode = topicCode;
+
+        const result = await this.db.collection(this.topicsCollection).updateOne({ _id: new ObjectId(topicId) }, update);
+
+        return result.modifiedCount;
+    }
+
+    /**
+     * Updates the topic after flashcards have been created
+     * 
+     * @param topicId the topic id
+     * @param generation the flashcards generation and count
+     * @param flashcardsCount the number of flashcards created
+     * @returns the updated count
+     */
+    async updateTopicGeneration(topicId: string, generation: string, flashcardsCount: number, isFlashcardGenerationComplete: boolean): Promise<number> {
+
+        const result = await this.db.collection(this.topicsCollection).updateOne({ _id: new ObjectId(topicId) }, { $set: { generation: generation, flashcardsCount: flashcardsCount, isFlashcardGenerationComplete: isFlashcardGenerationComplete } })
 
         return result.modifiedCount;
     }

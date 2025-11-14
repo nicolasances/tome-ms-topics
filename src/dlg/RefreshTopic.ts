@@ -6,12 +6,14 @@ import { ExecutionContext } from "toto-api-controller/dist/model/ExecutionContex
 import { ValidationError } from "toto-api-controller/dist/validation/Validator";
 import { TotoRuntimeError } from "toto-api-controller/dist/model/TotoRuntimeError";
 import { TopicsStore } from "../store/TopicsStore";
+import { EventPublisher, EVENTS } from "../evt/EventPublisher";
 
 
-export class GetTopic implements TotoDelegate {
+export class RefreshTopic implements TotoDelegate {
 
     async do(req: Request, userContext: UserContext, execContext: ExecutionContext): Promise<any> {
 
+        const body = req.body
         const logger = execContext.logger;
         const cid = execContext.cid;
         const config = execContext.config as ControllerConfig;
@@ -29,9 +31,21 @@ export class GetTopic implements TotoDelegate {
             client = await config.getMongoClient();
             const db = client.db(config.getDBName());
 
-            const topicStore = new TopicsStore(db, config); 
+            const topicStore = new TopicsStore(db, config);
 
-            return await topicStore.findTopicById(topicId);
+            // Check that the topic does not already exist
+            const preexistingTopic = await topicStore.findTopicById(topicId);
+
+            if (!preexistingTopic) throw new ValidationError(400, `Topic with id ${topicId} could not be found.`);
+
+            // Update the topic, making sure that flashcards generation is NOT marked as complete
+            await topicStore.updateTopicMetadata(topicId, { flashcardsGenerationComplete: false });
+
+            // Publish the event
+            await new EventPublisher(execContext, "tometopics").publishEvent(topicId, EVENTS.topicRefreshed, `Topic ${topicId} refreshed by user ${user}`, preexistingTopic);
+
+            // Return something
+            return { refreshed: true }
 
 
         } catch (error) {

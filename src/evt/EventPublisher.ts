@@ -1,7 +1,7 @@
 import { PubSub, Topic } from "@google-cloud/pubsub";
 import moment from "moment";
 import { ControllerConfig } from "../Config";
-import { ExecutionContext } from "toto-api-controller/dist/model/ExecutionContext";
+import { ExecutionContext } from "toto-api-controller";
 
 const pubsub = new PubSub({ projectId: process.env.GCP_PID });
 
@@ -66,7 +66,7 @@ export class EventPublisher {
 
         try {
 
-            await this.topic!.topic.publishMessage({ data: Buffer.from(message) });
+            await this.topic!.topic.publishMessage({ data: Buffer.from(message) as any });
 
             logger.compute(this.cid, "Successfully published the event [ " + eventType + " ]", "info");
 
@@ -98,6 +98,9 @@ export const EVENTS = {
 
     // A topic has been deleted
     topicDeleted: "topicDeleted",
+
+    // A topic has been refreshed 
+    topicRefreshed: "topicRefreshed",
 
 }
 
