@@ -1,5 +1,6 @@
 import { MongoClient } from 'mongodb';
 import { ConfigurationData, Logger, SecretsManager, TotoControllerConfig, ValidatorProps } from "toto-api-controller";
+import { TotoControllerConfigOptions } from 'toto-api-controller/dist/model/TotoControllerConfig';
 
 const dbName = 'tometopics';
 const collections = {
@@ -12,9 +13,9 @@ export class ControllerConfig extends TotoControllerConfig {
     mongoUser: string | undefined;
     mongoPwd: string | undefined;
 
-    constructor(configuration: ConfigurationData) {
+    constructor(configuration: ConfigurationData, options: TotoControllerConfigOptions) {
 
-        super(configuration);
+        super(configuration, options);
 
     }
 
@@ -22,7 +23,7 @@ export class ControllerConfig extends TotoControllerConfig {
         
         let promises = [];
 
-        const secretsManager = new SecretsManager(this.hyperscaler == 'local' ? 'gcp' : this.hyperscaler, this.env, this.logger!);  // Use GCP Secrets Manager when local
+        const secretsManager = new SecretsManager(this.hyperscaler == 'local' ? 'aws' : this.hyperscaler, this.env, this.logger!);  
 
         promises.push(super.load());
 

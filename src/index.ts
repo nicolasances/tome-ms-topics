@@ -8,13 +8,13 @@ import { OnTopicEvent } from "./evt/OnTopicEvent";
 import { RefreshTopic } from "./dlg/RefreshTopic";
 import { TotoAPIController } from "toto-api-controller";
 
-const api = new TotoAPIController(new ControllerConfig({apiName: "tome-ms-topics"}), {basePath: '/tometopics'});
+const api = new TotoAPIController(new ControllerConfig({ apiName: "tome-ms-topics" }, { defaultHyperscaler: 'aws', defaultSecretsManagerLocation: 'aws' }), { basePath: '/tometopics' });
 
 api.path('POST', '/topics', new PostTopic());
 api.path('GET', '/topics', new GetTopics());
 api.path('DELETE', '/topics/:id', new DeleteTopic());
 api.path('GET', '/topics/:topicId', new GetTopic());
-api.path('POST', '/topics/:topicId/refresh', new RefreshTopic()); 
+api.path('POST', '/topics/:topicId/refresh', new RefreshTopic());
 
 api.registerPubSubEventHandler('topic', new OnTopicEvent());
 api.registerPubSubEventHandler('practice', new OnPracticeEvent());
