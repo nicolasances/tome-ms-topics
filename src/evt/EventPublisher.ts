@@ -1,7 +1,7 @@
 import { PubSub, Topic } from "@google-cloud/pubsub";
 import moment from "moment";
 import { ControllerConfig } from "../Config";
-import { ExecutionContext } from "toto-api-controller";
+import { ExecutionContext } from "../totoapicontroller/TotoAPIController";
 
 const pubsub = new PubSub({ projectId: process.env.GCP_PID });
 
@@ -89,7 +89,7 @@ export interface PublishingResult {
     published: boolean
 }
 
-export type TOPIC_TYPE = "tometopics" 
+export type TOPIC_TYPE = "tometopics"
 
 export const EVENTS = {
 
