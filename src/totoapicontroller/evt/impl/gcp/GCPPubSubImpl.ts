@@ -1,23 +1,67 @@
 import { Request } from "express";
-import { APubSubImplementation, APubSubRequestFilter, APubSubRequestValidator } from "../../PubSubImplementation";
 import { TotoMessage } from "../../TotoMessage";
 import { ValidationError } from "../../../validation/Validator";
-import { googleAuthCheck } from "../../..";
+import { APubSubRequestFilter, APubSubRequestValidator, IPubSub, MessageDestination } from "../../MessageBus";
+import { googleAuthCheck } from "../../../validation/GoogleAuthCheck";
+import { Logger } from "../../../logger/TotoLogger";
+import { PubSub, Topic } from "@google-cloud/pubsub";
 
+const topics = new Array<TopicWrapper>()
 
-export class GCPPubSubImpl extends APubSubImplementation {
-    
+export class GCPPubSubImpl extends IPubSub {
+    expectedAudience: string;
+    pubsub: PubSub;
+    logger = new Logger("GCP PubSub");
+
+    constructor({ expectedAudience }: { expectedAudience: string }) {
+        super();
+
+        this.pubsub = new PubSub({ projectId: process.env.GCP_PID });
+        this.expectedAudience = expectedAudience;
+    }
+
     filter(req: Request): APubSubRequestFilter | null {
         return null;
     }
 
     getRequestValidator(): APubSubRequestValidator {
-        return new GCPPubSubRequestValidator(this.config, this.logger);
+        return new GCPPubSubRequestValidator(this.expectedAudience, this.logger);
     }
 
-    convertMessage(req: Request): TotoMessage {
+    async publishMessage(destination: MessageDestination, message: TotoMessage): Promise<void> {
 
-        let msg = JSON.parse(String(Buffer.from(req.body.message.data, 'base64')))
+        this.logger.compute(message.cid, "Publishing the event [ " + message.type + " ] for object with id [ " + message.id + " ]. The following message is to be published: [ " + message.msg + " ]", "info");
+
+        let topic = findTopicInCache(destination.topic!);
+
+        if (!topic) {
+
+            this.logger.compute(message.cid, `Instantiating PubSub Topic for topic [${destination.topic}]`, "info");
+
+            topic = new TopicWrapper(destination.topic!, this.pubsub.topic(destination.topic!));
+            topics.push(topic);
+
+            this.logger.compute(message.cid, `PubSub Topic [${destination.topic}] instantiated!`, "info");
+        }
+
+        try {
+
+            await topic.topic.publishMessage({ data: Buffer.from(message as any) as any });
+
+            this.logger.compute(message.cid, "Successfully published the event [ " + message.type + " ]", "info");
+
+        } catch (e: any) {
+
+            this.logger.compute(message.cid, "Publishing the event [ " + message.type + " ] failed. The following message had to be published: [ " + message.msg + " ]", "error");
+            this.logger.compute(message.cid, e, 'error');
+            console.error(e);
+
+        }
+    }
+
+    convert(envelope: Request): TotoMessage {
+
+        let msg = JSON.parse(String(Buffer.from(envelope.body.message.data, 'base64')))
 
         return {
             timestamp: msg.timestamp,
@@ -38,25 +82,29 @@ export class GCPPubSubImpl extends APubSubImplementation {
  */
 export class GCPPubSubRequestValidator extends APubSubRequestValidator {
 
+    constructor(private readonly expectedAudience: string, private readonly logger: Logger) {
+        super();
+    }
+
     isRequestRecognized(req: Request): boolean {
 
         // Check if the request body has the typical GCP PubSub message structure
-            if (!req.body || typeof req.body !== 'object') {
-                return false;
-            }
+        if (!req.body || typeof req.body !== 'object') {
+            return false;
+        }
 
-            // GCP PubSub push messages have a 'message' field and a 'subscription' field
-            const hasMessage = 'message' in req.body && typeof req.body.message === 'object';
+        // GCP PubSub push messages have a 'message' field and a 'subscription' field
+        const hasMessage = 'message' in req.body && typeof req.body.message === 'object';
 
-            if (!hasMessage) {
-                return false;
-            }
+        if (!hasMessage) {
+            return false;
+        }
 
-            // The message object should contain 'data' and 'messageId' fields
-            const message = req.body.message;
-            const hasData = 'data' in message;
+        // The message object should contain 'data' and 'messageId' fields
+        const message = req.body.message;
+        const hasData = 'data' in message;
 
-            return hasData; 
+        return hasData;
     }
 
     async isRequestAuthorized(req: Request): Promise<boolean> {
@@ -66,14 +114,34 @@ export class GCPPubSubRequestValidator extends APubSubRequestValidator {
 
         if (!authorizationHeader) throw new ValidationError(401, "No Authorization Header provided")
 
-        const expectedAudience = this.config.getExpectedAudience(); 
+        const expectedAudience = this.expectedAudience;
 
         const googleAuthCheckResult = await googleAuthCheck("", authorizationHeader, expectedAudience, this.logger, false);
 
-        if (googleAuthCheckResult.email) return true; 
+        if (googleAuthCheckResult.email) return true;
 
         return false;
 
     }
 
+}
+
+class TopicWrapper {
+
+    topicName: string;
+    topic: Topic;
+
+    constructor(topicName: string, topic: Topic) {
+        this.topicName = topicName;
+        this.topic = topic;
+    }
+}
+
+const findTopicInCache = (topicName: string) => {
+
+    for (let topic of topics) {
+        if (topic.topicName == topicName) return topic;
+    }
+
+    return null;
 }
