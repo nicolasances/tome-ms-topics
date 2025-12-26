@@ -5,13 +5,16 @@ import https from "https";
 import moment from "moment-timezone";
 import * as crypto from 'crypto';
 import { APubSubRequestFilter, APubSubRequestValidator, IPubSub, MessageDestination, ProcessingResponse } from "../../MessageBus";
+import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 
 export class SNSImpl extends IPubSub {
     private logger: Logger;
+    private snsClient: SNSClient;
 
     constructor() {
         super(); 
         this.logger = new Logger("SNSImpl");
+        this.snsClient = new SNSClient({ region: process.env.AWS_REGION || "eu-north-1" });
     }
 
     getRequestValidator(): APubSubRequestValidator {
@@ -23,8 +26,36 @@ export class SNSImpl extends IPubSub {
      * @param destination 
      * @param message 
      */
-    publishMessage(destination: MessageDestination, message: TotoMessage): Promise<void> {
-        throw new Error("Method not implemented.");
+    async publishMessage(destination: MessageDestination, message: TotoMessage): Promise<void> {
+        
+        if (!destination.topic) {
+            throw new ValidationError(400, "Topic ARN is required for SNS publishing");
+        }
+
+        try {
+            const command = new PublishCommand({
+                TopicArn: destination.topic,
+                Message: JSON.stringify(message),
+                MessageAttributes: {
+                    messageType: {
+                        DataType: "String",
+                        StringValue: message.type
+                    },
+                    correlationId: {
+                        DataType: "String",
+                        StringValue: message.cid
+                    }
+                }
+            });
+
+            const response = await this.snsClient.send(command);
+
+            this.logger.compute(message.cid, `Message published to SNS topic ${destination.topic}. MessageId: ${response.MessageId}`);
+
+        } catch (error) {
+            this.logger.compute(message.cid, `Failed to publish message to SNS: ${error}`, "error");
+            throw error;
+        }
     }
 
     /**
