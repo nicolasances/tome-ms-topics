@@ -11,10 +11,10 @@ export class SNSImpl extends IPubSub {
     private logger: Logger;
     private snsClient: SNSClient;
 
-    constructor() {
+    constructor({awsRegion}: {awsRegion: string}) {
         super(); 
         this.logger = new Logger("SNSImpl");
-        this.snsClient = new SNSClient({ region: process.env.AWS_REGION || "eu-north-1" });
+        this.snsClient = new SNSClient({ region: awsRegion || "eu-north-1" });
     }
 
     getRequestValidator(): APubSubRequestValidator {
