@@ -1,7 +1,5 @@
 export { TotoAPIController, TotoControllerOptions } from './TotoAPIController';
 export { newTotoServiceToken } from './auth/TotoToken';
-export { APubSubImplementation, APubSubRequestValidator, APubSubRequestFilter } from './evt/PubSubImplementation'
-export { PubSubImplementationsFactory } from './evt/PubSubImplementationsFactory'
 export { TotoMessage } from './evt/TotoMessage'
 export { Logger } from './logger/TotoLogger'
 export { AUTH_PROVIDERS } from './model/AuthProviders'
@@ -15,10 +13,9 @@ export { ValidatorProps } from './model/ValidatorProps'
 export { correlationId } from './util/CorrelationId'
 export { SecretsManager } from './util/CrossCloudSecret'
 export { basicallyHandleError } from './util/ErrorUtil'
-export { GCPPubSubRequestValidator } from './evt/impl/gcp/GCPPubSubRequestValidator';
-export { SNSRequestValidator } from './evt/impl/aws/SNSRequestValidator';
 export { googleAuthCheck } from './validation/GoogleAuthCheck'
 export { ConfigMock, LazyValidator, ValidationError, Validator } from './validation/Validator'
 export { RegistryCache } from './integration/RegistryCache'
 export { TotoRegistryAPI } from './integration/TotoRegistryAPI'
 export { TotoAPI, TotoAPIRequest, TotoAPIResponseConstructor } from './integration/TotoAPI'
+export { TotoMicroservice, TotoMicroserviceConfiguration } from './TotoMicroservice'

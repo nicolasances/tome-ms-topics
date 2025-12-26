@@ -1,7 +1,6 @@
 import { Request } from "express";
 import { ControllerConfig } from "../Config";
 import { TopicsStore } from "../store/TopicsStore";
-import { EventPublisher, EVENTS } from "../evt/EventPublisher";
 import { ExecutionContext, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
 
 
@@ -34,7 +33,8 @@ export class RefreshTopic implements TotoDelegate {
             await topicStore.updateTopicMetadata(topicId, { flashcardsGenerationComplete: false });
 
             // Publish the event
-            await new EventPublisher(execContext, "tometopics").publishEvent(topicId, EVENTS.topicRefreshed, `Topic ${topicId} refreshed by user ${user}`, preexistingTopic);
+            await 
+            // await new EventPublisher(execContext, "tometopics").publishEvent(topicId, EVENTS.topicRefreshed, `Topic ${topicId} refreshed by user ${user}`, preexistingTopic);
 
             // Return something
             return { refreshed: true }
