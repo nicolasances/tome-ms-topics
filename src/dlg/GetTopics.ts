@@ -4,7 +4,7 @@ import { TopicsStore } from "../store/TopicsStore";
 import { ExecutionContext, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
 
 
-export class GetTopics implements TotoDelegate {
+export class GetTopics extends TotoDelegate {
 
     async do(req: Request, userContext: UserContext, execContext: ExecutionContext): Promise<any> {
 

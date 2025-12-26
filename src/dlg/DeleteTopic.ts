@@ -1,11 +1,10 @@
 import { Request } from "express";
 import { ControllerConfig } from "../Config";
-import { EventPublisher, EVENTS } from "../evt/EventPublisher";
 import { ExecutionContext, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
 import { TopicsStore } from "../store/TopicsStore";
 
 
-export class DeleteTopic implements TotoDelegate {
+export class DeleteTopic extends TotoDelegate {
 
     async do(req: Request, userContext: UserContext, execContext: ExecutionContext): Promise<any> {
 

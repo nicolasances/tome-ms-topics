@@ -7,7 +7,7 @@ import { EventPublisher, EVENTS } from "../evt/EventPublisher";
 import { ExecutionContext, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
 
 
-export class PostTopic implements TotoDelegate {
+export class PostTopic extends TotoDelegate {
 
     async do(req: Request, userContext: UserContext, execContext: ExecutionContext): Promise<any> {
 

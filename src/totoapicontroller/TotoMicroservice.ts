@@ -30,13 +30,6 @@ export class TotoMicroservice {
             // Create the API controller
             const apiController = new TotoAPIController(config.config, { basePath: config.basePath });
 
-            // Register the API endpoints
-            if (config.apiEndpoints) {
-                for (const endpoint of config.apiEndpoints) {
-                    apiController.path(endpoint.method, endpoint.path, endpoint.delegate);
-                }
-            }
-
             // Create the message bus
             const bus = new TotoMessageBus({
                 controller: apiController,
@@ -50,6 +43,18 @@ export class TotoMicroservice {
             if (config.messageHandlers) {
                 for (const handler of config.messageHandlers) {
                     bus.registerMessageHandler(handler);
+                }
+            }
+
+            // Register the API endpoints
+            if (config.apiEndpoints) {
+                for (const endpoint of config.apiEndpoints) {
+
+                    // Create an instance of the delegate
+                    const delegateInstance = new endpoint.delegate(bus, config.config);
+
+                    // Add the endpoint to the controller
+                    apiController.path(endpoint.method, endpoint.path, delegateInstance);
                 }
             }
 
@@ -75,5 +80,5 @@ export interface TotoMicroserviceConfiguration {
 export interface TotoAPIEndpoint {
     method: 'GET' | 'POST' | 'PUT' | 'DELETE';
     path: string;
-    delegate: TotoDelegate;
+    delegate: new (messageBus: TotoMessageBus, config: TotoControllerConfig) => TotoDelegate;
 }

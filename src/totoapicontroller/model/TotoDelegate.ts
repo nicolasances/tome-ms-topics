@@ -1,10 +1,14 @@
 import { Request } from "express";
 import { ExecutionContext } from "./ExecutionContext";
 import { UserContext } from "./UserContext";
+import { TotoMessageBus } from "../evt/MessageBus";
+import { TotoControllerConfig } from "./TotoControllerConfig";
 
-export interface TotoDelegate {
+export abstract class TotoDelegate {
 
-    do(req: Request | FakeRequest, userContext: UserContext | undefined, execContext: ExecutionContext): Promise<any>
+    constructor(protected messageBus: TotoMessageBus, protected config: TotoControllerConfig) {}
+
+    abstract do(req: Request | FakeRequest, userContext: UserContext | undefined, execContext: ExecutionContext): Promise<any>
 
 }
 

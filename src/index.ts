@@ -13,11 +13,11 @@ TotoMicroservice.init({
     config: new ControllerConfig({ apiName: "tome-ms-topics" }, { defaultHyperscaler: "aws", defaultSecretsManagerLocation: "aws" }),
     basePath: '/tometopics',
     apiEndpoints: [
-        { method: 'POST', path: '/topics', delegate: new PostTopic() },
-        { method: 'GET', path: '/topics', delegate: new GetTopics() },
-        { method: 'DELETE', path: '/topics/:id', delegate: new DeleteTopic() },
-        { method: 'GET', path: '/topics/:topicId', delegate: new GetTopic() },
-        { method: 'POST', path: '/topics/:topicId/refresh', delegate: new RefreshTopic() }
+        { method: 'POST', path: '/topics', delegate: PostTopic },
+        { method: 'GET', path: '/topics', delegate: GetTopics },
+        { method: 'DELETE', path: '/topics/:id', delegate: DeleteTopic },
+        { method: 'GET', path: '/topics/:topicId', delegate: GetTopic },
+        { method: 'POST', path: '/topics/:topicId/refresh', delegate: RefreshTopic }
     ],
     messageHandlers: [
         new OnTopicScraped(),
