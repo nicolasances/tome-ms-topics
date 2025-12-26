@@ -1,41 +1,37 @@
 import { ControllerConfig } from "../../Config";
 import { TopicsStore } from "../../store/TopicsStore";
 import { TrackingStore } from "../../store/TrackingStore";
-import { ExecutionContext, newTotoServiceToken, TotoMessage, TotoRuntimeError, ValidationError } from "../../totoapicontroller";
+import { ExecutionContext, TotoMessage, TotoRuntimeError, ValidationError } from "../../totoapicontroller";
+import { ProcessingResponse, TotoMessageHandler } from "../../totoapicontroller/evt/MessageBus";
 
 /**
  * When a topic has been scraped, this handler will update the topic with the number of sections in it and in general all information provided in the "topicScraped" event.
  * This is used to keep the topic information up-to-date in the system.
  */
-export class OnTopicScraped {
+export class OnTopicScraped extends TotoMessageHandler {
 
-    execContext: ExecutionContext;
-    config: ControllerConfig;
+    protected handledMessageType: string = 'topicScraped';
 
-    constructor(execContext: ExecutionContext) {
-        this.execContext = execContext;
-        this.config = execContext.config as ControllerConfig;
-    }
+    async onMessage(msg: TotoMessage, execContext: ExecutionContext): Promise<ProcessingResponse> {
 
-    async do(msg: TotoMessage) {
-
-        const logger = this.execContext.logger;
+        const logger = execContext.logger;
+        const config = execContext.config as ControllerConfig;
         const cid = msg.cid;
         const data = msg.data as OnTopicScrapedMsgPayload;
 
         try {
 
-            const db = await this.config.getMongoDb(this.config.getDBName());
+            const db = await config.getMongoDb(config.getDBName());
 
             // Update the topic, recording the last practice date
-            const result = await new TopicsStore(db, this.config).updateTopicMetadata(data.topicId, { numSections: data.numSections });
+            const result = await new TopicsStore(db, config).updateTopicMetadata(data.topicId, { numSections: data.numSections });
 
             // Delete all refresh tracking records for the topic
-            const deletedCount = await new TrackingStore(db, this.config).deleteAllRecords(data.topicId);
+            const deletedCount = await new TrackingStore(db, config).deleteAllRecords(data.topicId);
 
             logger.compute(cid, `Topic ${data.topicId} updated with number of sections [${data.numSections}]. Modified count: ${result}. Deleted tracking records: ${deletedCount}`)
 
-            return { processed: true }
+            return { status: 'processed', responsePayload: 'Topic scraped event processed' };
 
         } catch (error) {
 

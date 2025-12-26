@@ -45,6 +45,11 @@ export abstract class TotoControllerConfig {
      */
     async load(): Promise<any> {
 
+        // If secrets are already loaded, skip
+        if (this.mongoHost && this.jwtSigningKey && this.expectedAudience && this.totoRegistryEndpoint) {
+            return;
+        }
+
         let promises = [];
 
         promises.push(this.secretsManager.getSecret('mongo-host').then((value) => {

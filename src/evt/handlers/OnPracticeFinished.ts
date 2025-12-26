@@ -1,21 +1,17 @@
 import { ControllerConfig } from "../../Config";
 import { Practice } from "../../model/Practice";
 import { TopicsStore } from "../../store/TopicsStore";
-import { ExecutionContext, newTotoServiceToken, TotoMessage, TotoRuntimeError, ValidationError } from "../../totoapicontroller";
+import { ExecutionContext, TotoMessage, TotoRuntimeError, ValidationError } from "../../totoapicontroller";
+import { ProcessingResponse, TotoMessageHandler } from "../../totoapicontroller/evt/MessageBus";
 
-export class OnPracticeFinished {
+export class OnPracticeFinished extends TotoMessageHandler {
 
-    execContext: ExecutionContext;
-    config: ControllerConfig;
+    protected handledMessageType: string = 'practiceFinished';
 
-    constructor(execContext: ExecutionContext) {
-        this.execContext = execContext;
-        this.config = execContext.config as ControllerConfig;
-    }
+    async onMessage(msg: TotoMessage, execContext: ExecutionContext): Promise<ProcessingResponse> {
 
-    async do(msg: TotoMessage) {
-
-        const logger = this.execContext.logger;
+        const logger = execContext.logger;
+        const config = execContext.config as ControllerConfig;
         const cid = msg.cid;
 
         // This handler expects a Practice in the payload of the event
@@ -26,14 +22,14 @@ export class OnPracticeFinished {
 
         try {
 
-            const db = await this.config.getMongoDb(this.config.getDBName());
+            const db = await config.getMongoDb(config.getDBName());
 
             // Update the topic, recording the last practice date
-            const result = await new TopicsStore(db, this.config).updateTopicLastPractice(practice.topicId, practice);
+            const result = await new TopicsStore(db, config).updateTopicLastPractice(practice.topicId, practice);
         
             logger.compute(cid, `Topic ${practice.topicId} updated. Modified count: ${result}`)
 
-            return { processed: true }
+            return { status: 'processed', responsePayload: 'Practice finished event processed' };
 
         } catch (error) {
 
@@ -48,8 +44,6 @@ export class OnPracticeFinished {
             }
 
         }
-
-        return { consumed: true }
 
     }
 }

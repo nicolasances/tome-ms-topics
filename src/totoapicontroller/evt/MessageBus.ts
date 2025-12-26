@@ -1,6 +1,6 @@
 import { Request } from "express";
 import { TotoMessage } from "./TotoMessage";
-import { ExecutionContext, Logger, TotoAPIController, TotoControllerConfig, TotoRuntimeError } from "..";
+import { ExecutionContext, Logger, TotoAPIController, TotoRuntimeError } from "..";
 import { v4 as uuidv4 } from 'uuid';
 
 export interface TotoMessageBusConfiguration {

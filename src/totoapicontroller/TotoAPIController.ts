@@ -13,8 +13,6 @@ import { SmokeDelegate } from './dlg/SmokeDelegate';
 import { TotoRuntimeError } from './model/TotoRuntimeError';
 import { TotoPathOptions } from './model/TotoPathOptions';
 import path from 'path';
-import { GCPPubSubImpl } from './evt/impl/gcp/GCPPubSubImpl';
-import { SNSImpl } from './evt/impl/aws/SNSImpl';
 import { TotoRegistryAPI } from './integration/TotoRegistryAPI';
 import { RegistryCache } from './integration/RegistryCache';
 
