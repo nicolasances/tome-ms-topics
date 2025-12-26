@@ -116,9 +116,9 @@ export class TotoMessageBus {
      * Callback for all PULL queue implementations when a message is received from the queue.
      * This intercepts ALL incoming messages from PULL queues and routes them to the right handler.
      * 
-     * @param msgPayload 
+     * @param envelope 
      */
-    public async onPullMessageReceived(msgPayload: any): Promise<ProcessingResponse> {
+    public async onPullMessageReceived(envelope: any): Promise<ProcessingResponse> {
 
         const messageBus = this.getBus();
 
@@ -126,7 +126,7 @@ export class TotoMessageBus {
         if (!(messageBus instanceof IQueue)) return { status: "ignored", responsePayload: "Message bus is not a Queue implementation" };
 
         // Decode the message
-        const message: TotoMessage = messageBus.decodeMessage(msgPayload);
+        const message: TotoMessage = messageBus.convert(envelope);
 
         // Get the handler
         const handler = this.findHandler("pull", message.type);
@@ -163,7 +163,7 @@ export class TotoMessageBus {
         }
 
         // Decode the message
-        const message: TotoMessage = messageBus.decodeMessage(req.body);
+        const message: TotoMessage = messageBus.convert(req);
 
         // Get the handler
         const handler = this.findHandler("push", message.type);
@@ -223,9 +223,14 @@ abstract class IMessageBus {
     /**
      * Decodes the payload of a message received from the message bus and transforms it into a TotoMessage.
      * 
-     * @param msgPayload the message payload received from the message bus. This is VERY implementation-specific: the msgPayload can be a string, a Buffer, an object... depending on the message bus used.
+     * @param envelope the envelope of the message received from the message bus. 
+     * The structure of the envelope depends on the specific message bus implementation.
+     * For example: 
+     *  - In GCP PubSub Push, then envelope will be the HTTP Request object received from PubSub.
+     *  - In AWS SQS, then envelope will be the message object received from SQS (Message object from AWS SDK).
+     *  - In AWS SNS Push, then envelope will be the HTTP Request object received from SNS. 
      */
-    abstract decodeMessage(msgPayload: any): TotoMessage;
+    abstract convert(envelope: any): TotoMessage;
 
     /**
      * Gets the Request Validator for this implementation. 
@@ -335,8 +340,6 @@ export class MessageDestination {
  * Class responsible for validating incoming requests from Messaging infrastructures.
  */
 export abstract class APubSubRequestValidator {
-
-    constructor(protected config: TotoControllerConfig, protected logger: Logger) { }
 
     /**
      * Checks if the request is authorized.

@@ -1,18 +1,37 @@
 import { Request } from "express";
-import { APubSubImplementation, APubSubRequestFilter, APubSubRequestValidator } from "../../PubSubImplementation";
 import { TotoMessage } from "../../TotoMessage";
-import { SNSRequestValidator } from "./SNSRequestValidator";
 import { Logger, ValidationError } from "../../..";
 import https from "https";
 import moment from "moment-timezone";
+import * as crypto from 'crypto';
+import { APubSubRequestFilter, APubSubRequestValidator, IPubSub, MessageDestination, ProcessingResponse } from "../../MessageBus";
 
-export class SNSImpl extends APubSubImplementation {
+export class SNSImpl extends IPubSub {
+    private logger: Logger;
 
-    getRequestValidator(): APubSubRequestValidator {
-        return new SNSRequestValidator(this.config, this.logger);
+    constructor() {
+        super(); 
+        this.logger = new Logger("SNSImpl");
     }
 
+    getRequestValidator(): APubSubRequestValidator {
+        return new SNSRequestValidator();
+    }
 
+    /**
+     * Publish a message to the specified destination.
+     * @param destination 
+     * @param message 
+     */
+    publishMessage(destination: MessageDestination, message: TotoMessage): Promise<void> {
+        throw new Error("Method not implemented.");
+    }
+
+    /**
+     * In SNS case, filters are used to handle subscription confirmation requests.
+     * @param req 
+     * @returns 
+     */
     filter(req: Request): APubSubRequestFilter | null {
 
         if (req.get('x-amz-sns-message-type') == 'SubscriptionConfirmation') return new SNSSubscriptionConfirmationFilter(this.logger);
@@ -20,7 +39,16 @@ export class SNSImpl extends APubSubImplementation {
         return null;
     }
 
-    convertMessage(req: Request): TotoMessage {
+    /**
+     * Converts the message received from SNS into a TotoMessage.
+     * In case of SNS Push messages, the envelope is the HTTP Request received from SNS.
+     * 
+     * @param envelope the HTTP Request received from SNS in a Push manner
+     * @returns 
+     */
+    convert(envelope: Request): TotoMessage {
+
+        const req = envelope;
 
         if (req.get('x-amz-sns-message-type') == 'SubscriptionConfirmation' || req.get('x-amz-sns-message-type') == 'UnsubscribeConfirmation') {
 
@@ -89,26 +117,215 @@ class SNSSubscriptionConfirmationFilter implements APubSubRequestFilter {
 
     constructor(private logger: Logger) { }
 
-    async handle(req: Request): Promise<void> {
+    async handle(req: Request): Promise<ProcessingResponse> {
 
-        // Confirm the subscription by calling the SubscribeURL
-        const message = req.body;
+        return new Promise<ProcessingResponse>((resolve, reject) => {
 
-        const subscribeUrl = message.SubscribeURL;
+            // Confirm the subscription by calling the SubscribeURL
+            const message = req.body;
 
-        this.logger.compute('', `Confirming SNS subscription: ${subscribeUrl}`);
+            const subscribeUrl = message.SubscribeURL;
 
-        https.get(subscribeUrl, {}, (response) => {
+            this.logger.compute('', `Confirming SNS subscription: ${subscribeUrl}`);
 
-            if (response.statusCode === 200) {
-                this.logger.compute('', `SNS subscription confirmed successfully.`);
+            https.get(subscribeUrl, {}, (response) => {
+
+                if (response.statusCode === 200) {
+                    this.logger.compute('', `SNS subscription confirmed successfully.`);
+                    resolve({ status: "processed", responsePayload: "SNS subscription confirmed successfully" });
+                }
+                else {
+                    this.logger.compute('', `Failed to confirm SNS subscription. Status: ${response.statusCode}`);
+                    resolve({ status: "failed", responsePayload: `Error confirming SNS subscription: ${response.statusCode}` });
+                }
+
+            }).on('error', (err) => {
+                this.logger.compute('', `Error confirming SNS subscription: ${err.message}`);
+                resolve({ status: "failed", responsePayload: `Error confirming SNS subscription: ${err.message}` });
+            });
+
+        })
+
+    }
+}
+
+export class SNSRequestValidator extends APubSubRequestValidator {
+
+    private logger: Logger;
+
+    constructor() {
+
+        super();
+
+        this.logger = new Logger("SNSRequestValidator");
+    }
+
+    isRequestRecognized(req: Request): boolean {
+
+        // Check if the x-amz-sns-message-type header is present 
+        if (req.get('x-amz-sns-message-type')) {
+
+            this.logger.compute('', `Received SNS request with header x-amz-sns-message-type: ${req.get("x-amz-sns-message-type")}`);
+
+            if (req.get('x-amz-sns-message-type') == 'SubscriptionConfirmation' || req.get('x-amz-sns-message-type') == 'UnsubscribeConfirmation' || req.get('x-amz-sns-message-type') == 'Notification') return true;
+
+        }
+
+        return false;
+
+        // const message = req.body;
+
+        // if (!message || !message.Type || !message.Signature || !message.SigningCertURL) return false;
+
+        // return this.isValidCertUrl(message.SigningCertURL);
+
+    }
+
+    async isRequestAuthorized(req: Request): Promise<boolean> {
+
+        try {
+
+            // Check if the x-amz-sns-message-type header is present 
+            if (req.get('x-amz-sns-message-type')) {
+
+                if (req.get('x-amz-sns-message-type') == 'SubscriptionConfirmation' || req.get('x-amz-sns-message-type') == 'UnsubscribeConfirmation' || req.get('x-amz-sns-message-type') == 'Notification') return true;
+
             }
-            else {
-                this.logger.compute('', `Failed to confirm SNS subscription. Status: ${response.statusCode}`);
+
+            const message = req.body;
+
+            // 1. Verify message has required fields
+            if (!message || !message.Type || !message.Signature || !message.SigningCertURL) {
+                this.logger.compute('', 'SNS message missing required fields');
+                return false;
             }
 
-        }).on('error', (err) => {
-            this.logger.compute('', `Error confirming SNS subscription: ${err.message}`);
+            // 2. Verify the certificate URL is from AWS
+            // if (!this.isValidCertUrl(message.SigningCertURL)) {
+            //     this.logger.compute('', 'Invalid SNS certificate URL');
+            //     return false;
+            // }
+
+            // // 3. Download and verify the signing certificate
+            // const certificate = await this.downloadCertificate(message.SigningCertURL);
+            // if (!certificate) {
+            //     this.logger.compute('', 'Failed to download SNS certificate');
+            //     return false;
+            // }
+
+            // // 4. Build the string to sign based on message type
+            // const stringToSign = this.buildStringToSign(message);
+
+            // if (!stringToSign) {
+            //     this.logger.compute('', 'Invalid SNS message type');
+            //     return false;
+            // }
+
+            // // 5. Verify the signature
+            // const isValid = this.verifySignature(certificate, stringToSign, message.Signature);
+            // if (!isValid) {
+            //     this.logger.compute('', 'SNS signature verification failed');
+            //     return false;
+            // }
+
+            // 6. Optional: Verify topic ARN if you want to restrict to specific topics
+            // const expectedTopicArn = process.env.SNS_TOPIC_ARN;
+            // if (expectedTopicArn && message.TopicArn !== expectedTopicArn) {
+            //     console.error('SNS message from unexpected topic');
+            //     return false;
+            // }
+
+            this.logger.compute('', `SNS message validated successfully. Type: ${message.Type}`);
+
+            return true;
+
+        } catch (error) {
+            console.error('SNS request validation error:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Verify the certificate URL is from AWS
+     */
+    private isValidCertUrl(certUrl: string): boolean {
+
+        try {
+
+            const url = new URL(certUrl);
+
+            // Must be HTTPS and from amazonaws.com
+            return url.protocol === 'https:' && (url.hostname.endsWith('.amazonaws.com') || url.hostname === 'sns.amazonaws.com');
+
+        } catch {
+            return false;
+        }
+    }
+
+    /**
+     * Download the certificate from AWS
+     */
+    private async downloadCertificate(certUrl: string): Promise<string | null> {
+
+        return new Promise((resolve) => {
+
+            https.get(certUrl, (res) => {
+
+                let data = '';
+                res.on('data', (chunk) => data += chunk);
+                res.on('end', () => resolve(data));
+
+            }).on('error', (err) => {
+                console.error('Certificate download error:', err);
+                resolve(null);
+            });
         });
+    }
+
+    /**
+     * Build the string to sign based on SNS message type
+     */
+    private buildStringToSign(message: any): string | null {
+
+        const fields: { [key: string]: string[] } = {
+            'Notification': ['Message', 'MessageId', 'Subject', 'Timestamp', 'TopicArn', 'Type'],
+            'SubscriptionConfirmation': ['Message', 'MessageId', 'SubscribeURL', 'Timestamp', 'Token', 'TopicArn', 'Type'],
+            'UnsubscribeConfirmation': ['Message', 'MessageId', 'SubscribeURL', 'Timestamp', 'Token', 'TopicArn', 'Type']
+        };
+
+        const messageType = message.Type;
+        const fieldList = fields[messageType];
+
+        if (!fieldList) {
+            return null;
+        }
+
+        let stringToSign = '';
+        for (const field of fieldList) {
+            if (message[field] !== undefined) {
+                stringToSign += `${field}\n${message[field]}\n`;
+            }
+        }
+
+        return stringToSign;
+    }
+
+    /**
+     * Verify the signature using the certificate
+     */
+    private verifySignature(certificate: string, stringToSign: string, signature: string): boolean {
+        try {
+
+            const verifier = crypto.createVerify('SHA1');
+
+            verifier.update(stringToSign, 'utf8');
+
+            // Pass signature as base64 string and specify encoding
+            return verifier.verify(certificate, signature, 'base64');
+
+        } catch (error) {
+            console.error('Signature verification error:', error);
+            return false;
+        }
     }
 }
