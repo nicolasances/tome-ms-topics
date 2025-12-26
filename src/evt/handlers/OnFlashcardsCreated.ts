@@ -1,14 +1,11 @@
-import { ExecutionContext } from "toto-api-controller/dist/model/ExecutionContext";
-import { TotoRuntimeError } from "toto-api-controller/dist/model/TotoRuntimeError";
 import { ControllerConfig } from "../../Config";
-import { ValidationError } from "toto-api-controller/dist/validation/Validator";
 import { TopicsStore } from "../../store/TopicsStore";
 import { FlashcardsCreatedEvent } from "../model/FlashcardsCreatedEvent";
 import { FlashcardsAPI } from "../../api/FlashcardsAPI";
 import { RefreshTrackingRecord } from "../../model/RefreshTracking";
 import { TrackingStore } from "../../store/TrackingStore";
 import { isTopicGenerationComplete } from "../../util/RefreshTrackingUtil";
-import { TotoMessage, newTotoServiceToken } from "toto-api-controller"
+import { ExecutionContext, newTotoServiceToken, TotoMessage, TotoRuntimeError, ValidationError } from "../../totoapicontroller";
 
 export class OnFlashcardsCreated {
 
@@ -30,17 +27,14 @@ export class OnFlashcardsCreated {
         logger.compute(cid, `Flashcards created event: [${JSON.stringify(eventPayload)}]`)
         logger.compute(cid, `Updating topic ${eventPayload.topicId} - ${eventPayload.topicCode}`)
 
-        let client;
-
         try {
 
-            client = await this.config.getMongoClient();
-            const db = client.db(this.config.getDBName());
+            const db = await this.config.getMongoDb(this.config.getDBName());
 
             const topicStore = new TopicsStore(db, this.config);
             const trackingStore = new TrackingStore(db, this.config);
 
-            await trackingStore.saveRecord(new RefreshTrackingRecord( eventPayload.topicId, eventPayload.sectionCode, eventPayload.type, eventPayload.count ));
+            await trackingStore.saveRecord(new RefreshTrackingRecord(eventPayload.topicId, eventPayload.sectionCode, eventPayload.type, eventPayload.count));
 
             // 1. Retrieve the number of flashcards that the topic has so far
             const jwtToken = newTotoServiceToken(this.config);
@@ -60,7 +54,7 @@ export class OnFlashcardsCreated {
             const expectedNumSections = topic?.numSections;
             const sectionsWithFlashcards = sectionCodes.size;
 
-            let isFlashcardComplete = false; 
+            let isFlashcardComplete = false;
             if (sectionsWithFlashcards === expectedNumSections) {
 
                 // Use the Tracking Utils to check if the flashcard generation is complete for the topic
@@ -76,12 +70,12 @@ export class OnFlashcardsCreated {
 
             // If the generation is complete, get the latest generation 
             let generation = "-";
-            if (isFlashcardComplete) 
+            if (isFlashcardComplete)
                 generation = await new FlashcardsAPI(this.execContext, jwtToken).getLatestFlashcardsGeneration().then(res => res.latestGeneration);
 
             // Update the topic, recording the last practice date
             const result = await topicStore.updateTopicGeneration(eventPayload.topicId, generation, count, isFlashcardComplete);
-        
+
             logger.compute(cid, `Topic ${eventPayload.topicId} updated with generation ${generation} and flashcards count ${count}. Modified count: ${result}`)
 
             return { processed: true }
@@ -98,9 +92,6 @@ export class OnFlashcardsCreated {
                 throw error;
             }
 
-        }
-        finally {
-            if (client) client.close();
         }
 
     }

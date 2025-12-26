@@ -1,5 +1,5 @@
 import http from "request";
-import { newTotoServiceToken, TotoRuntimeError, TotoControllerConfig, Logger } from "../TotoAPIController";
+import { newTotoServiceToken, TotoRuntimeError, TotoControllerConfig, Logger } from "..";
 import { v4 as uuidv4 } from 'uuid';
 
 export class TotoRegistryAPI {

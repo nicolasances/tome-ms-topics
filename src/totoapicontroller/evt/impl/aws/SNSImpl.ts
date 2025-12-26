@@ -2,7 +2,7 @@ import { Request } from "express";
 import { APubSubImplementation, APubSubRequestFilter, APubSubRequestValidator } from "../../PubSubImplementation";
 import { TotoMessage } from "../../TotoMessage";
 import { SNSRequestValidator } from "./SNSRequestValidator";
-import { Logger, ValidationError } from "../../../TotoAPIController";
+import { Logger, ValidationError } from "../../..";
 import https from "https";
 import moment from "moment-timezone";
 

@@ -1,6 +1,6 @@
 import http from "request";
 import { v4 as uuidv4 } from "uuid";
-import { newTotoServiceToken, RegistryCache, TotoControllerConfig, TotoRuntimeError } from "../TotoAPIController";
+import { newTotoServiceToken, RegistryCache, TotoControllerConfig, TotoRuntimeError } from "..";
 
 export class TotoAPI {
 

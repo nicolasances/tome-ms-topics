@@ -1,5 +1,5 @@
 import * as jwt from 'jsonwebtoken';
-import { AUTH_PROVIDERS } from '../TotoAPIController';
+import { AUTH_PROVIDERS } from '..';
 
 /**
  * Extracts the Bearer token from the HTTP Authorization header and decodes it

@@ -1,6 +1,6 @@
 import moment from "moment-timezone";
 import jwt from 'jsonwebtoken';
-import { TotoControllerConfig } from "../TotoAPIController";
+import { TotoControllerConfig } from "..";
 
 /**
  * Generates a new JWT token for the Toto service.

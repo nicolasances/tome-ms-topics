@@ -1,7 +1,6 @@
 
 import http from "request";
-import { ExecutionContext } from "toto-api-controller/dist/model/ExecutionContext";
-import { ControllerConfig } from "../Config";
+import { ExecutionContext } from "../totoapicontroller";
 
 export class FlashcardsAPI {
 

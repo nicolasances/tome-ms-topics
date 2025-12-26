@@ -6,7 +6,7 @@ import { GetTopic } from "./dlg/GetTopic";
 import { OnPracticeEvent } from "./evt/OnPracticeEvent";
 import { OnTopicEvent } from "./evt/OnTopicEvent";
 import { RefreshTopic } from "./dlg/RefreshTopic";
-import { TotoAPIController } from "./totoapicontroller/TotoAPIController";
+import { TotoAPIController } from "./totoapicontroller";
 
 const config = new ControllerConfig({apiName: "tome-ms-topics"}, {defaultHyperscaler: "aws", defaultSecretsManagerLocation: "aws"});
 const api = new TotoAPIController(config, {basePath: '/tometopics'});

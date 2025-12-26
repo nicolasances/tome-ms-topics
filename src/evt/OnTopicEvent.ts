@@ -1,7 +1,6 @@
-import { ExecutionContext } from "toto-api-controller/dist/model/ExecutionContext";
+import { ExecutionContext, ITotoPubSubEventHandler, TotoMessage } from "../totoapicontroller";
 import { OnFlashcardsCreated } from "./handlers/OnFlashcardsCreated";
 import { OnTopicScraped } from "./handlers/OnTopicScraped";
-import { ITotoPubSubEventHandler, TotoMessage } from "toto-api-controller"; 
 
 /**
  * Reacts to events on topics

@@ -2,7 +2,7 @@ import { Request } from "express";
 import { ControllerConfig } from "../Config";
 import { TopicsStore } from "../store/TopicsStore";
 import { EventPublisher, EVENTS } from "../evt/EventPublisher";
-import { ExecutionContext, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller/TotoAPIController";
+import { ExecutionContext, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
 
 
 export class RefreshTopic implements TotoDelegate {

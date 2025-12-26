@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { Logger, TotoControllerConfig, TotoRuntimeError } from "../TotoAPIController";
+import { Logger, TotoControllerConfig, TotoRuntimeError } from "..";
 import { APubSubImplementation } from "./PubSubImplementation";
 
 /**

@@ -1,6 +1,6 @@
 
 import { TotoRegistryAPI, APIEndpoint } from "./TotoRegistryAPI";
-import { Logger, TotoControllerConfig, TotoRuntimeError } from "../TotoAPIController";
+import { Logger, TotoControllerConfig, TotoRuntimeError } from "..";
 
 const DEFAULT_TTL_MINUTES = 30;
 

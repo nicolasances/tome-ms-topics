@@ -1,7 +1,7 @@
 import { PubSub, Topic } from "@google-cloud/pubsub";
 import moment from "moment";
 import { ControllerConfig } from "../Config";
-import { ExecutionContext } from "../totoapicontroller/TotoAPIController";
+import { ExecutionContext } from "../totoapicontroller";
 
 const pubsub = new PubSub({ projectId: process.env.GCP_PID });
 
@@ -9,6 +9,7 @@ const topics = new Array<TopicWrapper>()
 
 /**
  * Manages the publishing of an event
+ * @deprecated This class is deprecated. Use the new message bus from toto-pubsub instead.
  */
 export class EventPublisher {
 

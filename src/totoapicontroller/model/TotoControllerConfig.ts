@@ -1,6 +1,6 @@
 import { Db, MongoClient } from "mongodb";
 import { Logger } from "../logger/TotoLogger";
-import { SecretsManager, TotoRuntimeError } from "../TotoAPIController";
+import { SecretsManager, TotoRuntimeError } from "..";
 import { ValidatorProps } from "./ValidatorProps";
 
 export abstract class TotoControllerConfig {

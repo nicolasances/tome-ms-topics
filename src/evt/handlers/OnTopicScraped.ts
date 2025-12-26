@@ -1,10 +1,7 @@
-import { ExecutionContext } from "toto-api-controller/dist/model/ExecutionContext";
 import { ControllerConfig } from "../../Config";
 import { TopicsStore } from "../../store/TopicsStore";
-import { ValidationError } from "toto-api-controller/dist/validation/Validator";
-import { TotoRuntimeError } from "toto-api-controller/dist/model/TotoRuntimeError";
 import { TrackingStore } from "../../store/TrackingStore";
-import { TotoMessage } from "toto-api-controller";
+import { ExecutionContext, newTotoServiceToken, TotoMessage, TotoRuntimeError, ValidationError } from "../../totoapicontroller";
 
 /**
  * When a topic has been scraped, this handler will update the topic with the number of sections in it and in general all information provided in the "topicScraped" event.
@@ -26,12 +23,9 @@ export class OnTopicScraped {
         const cid = msg.cid;
         const data = msg.data as OnTopicScrapedMsgPayload;
 
-        let client;
-
         try {
 
-            client = await this.config.getMongoClient();
-            const db = client.db(this.config.getDBName());
+            const db = await this.config.getMongoDb(this.config.getDBName());
 
             // Update the topic, recording the last practice date
             const result = await new TopicsStore(db, this.config).updateTopicMetadata(data.topicId, { numSections: data.numSections });
@@ -56,10 +50,6 @@ export class OnTopicScraped {
             }
 
         }
-        finally {
-            if (client) client.close();
-        }
-
 
     }
 

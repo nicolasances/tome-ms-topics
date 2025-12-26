@@ -1,4 +1,4 @@
-import { TotoControllerConfig, ValidatorProps } from "./totoapicontroller/TotoAPIController";
+import { TotoControllerConfig, ValidatorProps } from "./totoapicontroller";
 
 const dbName = 'tometopics';
 const collections = {

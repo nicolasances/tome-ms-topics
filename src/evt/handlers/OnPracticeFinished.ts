@@ -1,10 +1,7 @@
-import { ExecutionContext } from "toto-api-controller/dist/model/ExecutionContext";
-import { TotoRuntimeError } from "toto-api-controller/dist/model/TotoRuntimeError";
 import { ControllerConfig } from "../../Config";
-import { ValidationError } from "toto-api-controller/dist/validation/Validator";
 import { Practice } from "../../model/Practice";
 import { TopicsStore } from "../../store/TopicsStore";
-import { TotoMessage } from "toto-api-controller";
+import { ExecutionContext, newTotoServiceToken, TotoMessage, TotoRuntimeError, ValidationError } from "../../totoapicontroller";
 
 export class OnPracticeFinished {
 
@@ -27,12 +24,9 @@ export class OnPracticeFinished {
         logger.compute(cid, `Practice finished: [${JSON.stringify(practice)}]`)
         logger.compute(cid, `Updating topic ${practice.topicId}`)
 
-        let client;
-
         try {
 
-            client = await this.config.getMongoClient();
-            const db = client.db(this.config.getDBName());
+            const db = await this.config.getMongoDb(this.config.getDBName());
 
             // Update the topic, recording the last practice date
             const result = await new TopicsStore(db, this.config).updateTopicLastPractice(practice.topicId, practice);
@@ -54,10 +48,6 @@ export class OnPracticeFinished {
             }
 
         }
-        finally {
-            if (client) client.close();
-        }
-
 
         return { consumed: true }
 

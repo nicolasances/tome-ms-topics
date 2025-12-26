@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { Logger, TotoControllerConfig } from "../TotoAPIController";
+import { Logger, TotoControllerConfig } from "..";
 import { TotoMessage } from "./TotoMessage";
 
 export abstract class APubSubImplementation {

@@ -4,7 +4,7 @@ import { TopicsStore } from "../store/TopicsStore";
 import { Topic } from "../model/Topic";
 import moment from "moment-timezone";
 import { EventPublisher, EVENTS } from "../evt/EventPublisher";
-import { ExecutionContext, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller/TotoAPIController";
+import { ExecutionContext, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
 
 
 export class PostTopic implements TotoDelegate {

@@ -1,7 +1,7 @@
 import { Request } from "express";
 import { ControllerConfig } from "../Config";
 import { EventPublisher, EVENTS } from "../evt/EventPublisher";
-import { ExecutionContext, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller/TotoAPIController";
+import { ExecutionContext, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
 import { TopicsStore } from "../store/TopicsStore";
 
 

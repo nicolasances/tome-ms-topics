@@ -1,5 +1,5 @@
 import { OnPracticeFinished } from "./handlers/OnPracticeFinished";
-import { ExecutionContext, ITotoPubSubEventHandler, TotoMessage } from "toto-api-controller";
+import { ExecutionContext, ITotoPubSubEventHandler, TotoMessage } from "../totoapicontroller";
 
 /**
  * Reacts to events on topics
