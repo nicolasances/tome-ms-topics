@@ -1,5 +1,5 @@
 import { SQSClient, SendMessageCommand, ReceiveMessageCommand, DeleteMessageCommand, GetQueueUrlCommand, SQS } from '@aws-sdk/client-sqs';
-import { APubSubRequestValidator, IQueue, MessageDestination } from '../../MessageBus';
+import { APubSubRequestValidator, IQueue, MessageDestination } from '../../IMessageBus';
 import { Logger } from '../../../logger/TotoLogger';
 import { TotoMessage } from '../../TotoMessage';
 import { Request } from 'express';

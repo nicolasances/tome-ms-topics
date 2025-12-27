@@ -6,7 +6,7 @@ import { RefreshTrackingRecord } from "../../model/RefreshTracking";
 import { TrackingStore } from "../../store/TrackingStore";
 import { isTopicGenerationComplete } from "../../util/RefreshTrackingUtil";
 import { Logger, newTotoServiceToken, TotoMessage, TotoRuntimeError, ValidationError } from "../../totoapicontroller";
-import { ProcessingResponse, TotoMessageHandler } from "../../totoapicontroller/evt/MessageBus";
+import { ProcessingResponse, TotoMessageHandler } from "../../totoapicontroller/evt/TotoMessageHandler";
 
 export class OnFlashcardsCreated extends TotoMessageHandler {
 

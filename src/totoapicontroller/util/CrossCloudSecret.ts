@@ -2,7 +2,7 @@
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
 import { SecretsManager as AWSSecretsManager, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
 import { Logger } from '../logger/TotoLogger';
-import { AWSConfiguration, AzureConfiguration, GCPConfiguration, SupportedHyperscalers, TotoEnvironment } from '../core/TotoMicroservice';
+import { AWSConfiguration, AzureConfiguration, GCPConfiguration, SupportedHyperscalers, TotoEnvironment } from '..';
 
 /**
  * This class is a utility class to extract secrets from different clouds. 

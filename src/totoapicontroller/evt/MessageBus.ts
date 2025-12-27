@@ -1,9 +1,10 @@
 import { Request } from "express";
 import { TotoMessage } from "./TotoMessage";
 import { AWSConfiguration, TotoAPIController, TotoControllerConfig, TotoEnvironment, TotoRuntimeError, ValidationError } from "..";
-import { v4 as uuidv4 } from 'uuid';
 import { SNSImpl } from "./impl/aws/SNSImpl";
 import { GCPPubSubImpl } from "./impl/gcp/GCPPubSubImpl";
+import { IMessageBus, IPubSub, IQueue, MessageDestination } from "./IMessageBus";
+import { ProcessingResponse, TotoMessageHandler } from "./TotoMessageHandler";
 
 export interface TotoMessageBusConfiguration {
     controller: TotoAPIController;
@@ -58,7 +59,9 @@ export class TotoMessageBus {
         this.apiController = config.controller;
 
         // Instantiate the Message Bus implementation
-        this.messageBus = this.getMessageBusImplementation();
+        if (this.config.environment.hyperscaler === "aws") this.messageBus = new SNSImpl({ awsRegion: (this.config.environment.hyperscalerConfiguration as AWSConfiguration).awsRegion });
+        else if (this.config.environment.hyperscaler === "gcp") this.messageBus = new GCPPubSubImpl({ expectedAudience: this.config.customConfig.getExpectedAudience() });
+        else throw new TotoRuntimeError(500, `Unsupported hyperscaler ${this.config.environment.hyperscaler} for Message Bus implementation`);
 
         // IMPORTANT! Register the message bus's handler (filter) in API Controller and Pull Queues and PubSubs
         // 1. For PULL queue implementations, register the MessageBus PULL callback so that messages pulled by the queue are routed to the MessageBus first
@@ -70,14 +73,6 @@ export class TotoMessageBus {
         this.apiController.registerPubSubMessageEndpoint("/events", this.onPushMessageReceived.bind(this));
     }
 
-    public getMessageBusImplementation(): any {
-
-        if (this.config.environment.hyperscaler === "aws") return new SNSImpl({ awsRegion: (this.config.environment.hyperscalerConfiguration as AWSConfiguration).awsRegion });
-
-        if (this.config.environment.hyperscaler === "gcp") return new GCPPubSubImpl({ expectedAudience: this.config.customConfig.getExpectedAudience() });
-
-        return null;
-    }
 
     /**
      * Registers a message handler to process incoming messages.
@@ -214,173 +209,4 @@ class MessageHandlerRegistration {
         this.messageHandler = data.messageHandler;
         this.messageType = data.messageType;
     }
-}
-
-/**
- * Interface for Message Bus implementations (e.g., Pub/Sub, SQS, RabbitMQ). 
- * Use this interface for publish-subscribe style message buses (e.g., Pub/Sub).
- * 
- * This abstract class is not exported as it SHOULD NOT be implemented directly. Instead, use the specialized interfaces IPubSub or IQueue.
- */
-abstract class IMessageBus {
-
-    /**
-     * Publishes a message to the specified topic or queue.
-     * 
-     * @param destination the destination (topic or queue) where the message should be published
-     * @param message the TotoMessage to be published
-     */
-    abstract publishMessage(destination: MessageDestination, message: TotoMessage): Promise<void>;
-
-    /**
-     * Decodes the payload of a message received from the message bus and transforms it into a TotoMessage.
-     * 
-     * @param envelope the envelope of the message received from the message bus. 
-     * The structure of the envelope depends on the specific message bus implementation.
-     * For example: 
-     *  - In GCP PubSub Push, then envelope will be the HTTP Request object received from PubSub.
-     *  - In AWS SQS, then envelope will be the message object received from SQS (Message object from AWS SDK).
-     *  - In AWS SNS Push, then envelope will be the HTTP Request object received from SNS. 
-     */
-    abstract convert(envelope: any): TotoMessage;
-
-    /**
-     * Gets the Request Validator for this implementation. 
-     * The Request Validator is used to validate incoming requests from the messaging infrastructure. It checks: 
-     * - if the request is recognized by the validator (i.e., if it comes from the expected messaging infrastructure and is well-formed)
-     * - if the request is authorized (i.e., if it has the correct authentication/authorization to be processed)
-     */
-    abstract getRequestValidator(): APubSubRequestValidator;
-
-}
-
-/**
- * Implementation of IMessageBus for publish-subscribe style message buses (e.g., GCP PubSub, AWS SNS).
- */
-export abstract class IPubSub extends IMessageBus {
-
-    /**
-     * Allows the pubSub implementation to filter incoming requests that should not be processed by the main event handler.
-     * 
-     * For example, in AWS SNS, subscription confirmation requests need to be handled separately from the main event processing and should not clutter application code.
-     * 
-     * @param req the HTTP Request from the pubsub infrastructure
-     */
-    abstract filter(req: Request): APubSubRequestFilter | null;
-}
-
-/**
- * Interface for Queue-like Message Buses (e.g., SQS, RabbitMQ)
- */
-export abstract class IQueue extends IMessageBus {
-
-    protected messageHandler: (msgPayload: any) => Promise<ProcessingResponse> = (msgPayload: any) => { throw new Error("Message handler not set"); };
-
-    /**
-     * Used for cleanup during application shutdown.
-     * Implementations should close any open connections and release resources here, if needed and applicable.
-     */
-    abstract close(): Promise<void>;
-
-    /**
-     * Sets the message handler for the messages received from the queue. 
-     * The message handler should always be a MessageBus instance, so that messages received from the queue are first routed to the MessageBus 
-     * before being dispatched to the right handler.
-     * 
-     * This SHOULD NOT be overridden by subclasses.
-     * 
-     * @param handler the handler for the messages received from the queue
-     */
-    public setMessageHandler(handler: (msgPayload: any) => Promise<ProcessingResponse>): void {
-        this.messageHandler = handler;
-    }
-
-}
-
-/**
- * Interface for handling incoming Toto Messages.
- * All Handlers must implement this interface.
- */
-export abstract class TotoMessageHandler {
-
-    cid?: string;
-
-    constructor(protected config: TotoControllerConfig) { }
-
-    /**
-     * Wrapper of the onMessage() method that provides specific pre-processing if needed.
-     * @param msg the message to process
-     * @returns 
-     */
-    public async processMessage(msg: TotoMessage): Promise<ProcessingResponse> {
-
-        this.cid = msg.cid || uuidv4();
-
-        return this.onMessage(msg);
-    }
-
-    /**
-     * The type of event handled by this handler.
-     * 
-     * By design, each handler handles a single event type.
-     */
-    protected abstract handledMessageType: string;
-
-    /**
-     * Gets the type of event handled by this handler.
-     */
-    getHandledMessageType(): string {
-        return this.handledMessageType;
-    }
-
-    /**
-     * Processes an incoming message.
-     * 
-     * @param msg the message to process
-     */
-    protected abstract onMessage(msg: TotoMessage): Promise<ProcessingResponse>;
-
-}
-
-export interface ProcessingResponse {
-    status: "processed" | "ignored" | "failed";
-    responsePayload?: any;
-}
-
-export interface APubSubRequestFilter {
-    handle(req: Request): Promise<ProcessingResponse>;
-}
-
-/**
- * Represents a destination for messages, either a topic (for Pub/Sub) or a queue (for queue-based message buses).
- */
-export class MessageDestination {
-    topic?: string;
-    queue?: string;
-
-    constructor(init: { topic: string; queue?: string } | { topic?: string; queue: string }) {
-        Object.assign(this, init);
-    }
-}
-
-/**
- * Class responsible for validating incoming requests from Messaging infrastructures.
- */
-export abstract class APubSubRequestValidator {
-
-    /**
-     * Checks if the request is authorized.
-     * 
-     * @param req the HTTP request
-     */
-    abstract isRequestAuthorized(req: Request): Promise<boolean>;
-
-    /**
-     * Checks if the request is recognized by the validator. 
-     * The concrete implementation of the validator will define if the request comes from the expected PubSub infrastructure that is handled by the validator.
-     * 
-     * @param req the HTTP request
-     */
-    abstract isRequestRecognized(req: Request): boolean;
-
 }

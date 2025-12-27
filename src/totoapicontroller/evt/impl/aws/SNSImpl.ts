@@ -1,11 +1,13 @@
 import { Request } from "express";
-import { TotoMessage } from "../../TotoMessage";
-import { Logger, ValidationError } from "../../..";
 import https from "https";
 import moment from "moment-timezone";
 import * as crypto from 'crypto';
-import { APubSubRequestFilter, APubSubRequestValidator, IPubSub, MessageDestination, ProcessingResponse, TopicIdentifier } from "../../MessageBus";
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
+import { TotoMessage } from "../../TotoMessage";
+import { ValidationError } from "../../../validation/Validator";
+import { Logger } from "../../../logger/TotoLogger";
+import { APubSubRequestFilter, APubSubRequestValidator, IPubSub, MessageDestination } from "../../IMessageBus";
+import { ProcessingResponse } from "../../TotoMessageHandler";
 
 export interface SNSConfiguration {
     awsRegion: string;
@@ -48,28 +50,20 @@ export class SNSImpl extends IPubSub {
             throw new ValidationError(400, `Topic ARN not found for topic name: ${destination.topic}. Make sure the topic ARN is loaded.`);
         }
 
+        logger.eventOut(message.cid, `Publishing message ${message.type} to SNS topic ${destination.topic}`);
+
         try {
             const command = new PublishCommand({
                 TopicArn: topicArn,
                 Message: JSON.stringify(message),
-                MessageAttributes: {
-                    messageType: {
-                        DataType: "String",
-                        StringValue: message.type
-                    },
-                    correlationId: {
-                        DataType: "String",
-                        StringValue: message.cid
-                    }
-                }
             });
 
             const response = await this.snsClient.send(command);
 
-            logger.compute(message.cid, `Message published to SNS topic ${destination.topic}. MessageId: ${response.MessageId}`);
+            logger.eventOut(message.cid, `Message ${message.type} published to SNS topic ${destination.topic}. MessageId: ${response.MessageId}`);
 
         } catch (error) {
-            logger.compute(message.cid, `Failed to publish message to SNS: ${error}`, "error");
+            logger.compute(message.cid, `Failed to publish message ${message.type} to SNS Topic ${destination.topic}: ${error}`, "error");
             throw error;
         }
     }

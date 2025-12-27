@@ -2,7 +2,7 @@ import { ControllerConfig } from "../../Config";
 import { Practice } from "../../model/Practice";
 import { TopicsStore } from "../../store/TopicsStore";
 import { Logger, TotoMessage, TotoRuntimeError, ValidationError } from "../../totoapicontroller";
-import { ProcessingResponse, TotoMessageHandler } from "../../totoapicontroller/evt/MessageBus";
+import { ProcessingResponse, TotoMessageHandler } from "../../totoapicontroller/evt/TotoMessageHandler";
 
 export class OnPracticeFinished extends TotoMessageHandler {
 

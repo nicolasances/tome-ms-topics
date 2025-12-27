@@ -2,7 +2,7 @@ import { ControllerConfig } from "../../Config";
 import { TopicsStore } from "../../store/TopicsStore";
 import { TrackingStore } from "../../store/TrackingStore";
 import { Logger, TotoMessage, TotoRuntimeError, ValidationError } from "../../totoapicontroller";
-import { ProcessingResponse, TotoMessageHandler } from "../../totoapicontroller/evt/MessageBus";
+import { ProcessingResponse, TotoMessageHandler } from "../../totoapicontroller/evt/TotoMessageHandler";
 
 /**
  * When a topic has been scraped, this handler will update the topic with the number of sections in it and in general all information provided in the "topicScraped" event.

@@ -28,16 +28,14 @@ export class TotoMicroservice {
         const customConfig = new config.customConfiguration(secretsManager);
 
         // If there are secrets to load for the message bus, load them now
-        let topicNames = undefined;
+        let topicNames: TopicIdentifier[] | undefined = undefined;
         if (config.messageBusConfiguration && config.messageBusConfiguration.topics) {
 
             // Load the topic names (resource identifiers) from Secrets Manager
-            const topicNamesSecrets = config.messageBusConfiguration.topics.map(topic => topic.secret);
+            const topicNamesPromises = config.messageBusConfiguration.topics.map(async (topic) => {
+                const secretValue = await secretsManager.getSecret(topic.secret);
 
-            const topicNamesPromises = topicNamesSecrets.map(async (secretName) => {
-                const secretValue = await secretsManager.getSecret(secretName);
-
-                return { logicalName: secretName, resourceIdentifier: secretValue } as TopicIdentifier;
+                return { logicalName: topic.logicalName, resourceIdentifier: secretValue } as TopicIdentifier;
             });
 
             topicNames = await Promise.all(topicNamesPromises);

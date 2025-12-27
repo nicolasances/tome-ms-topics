@@ -1,7 +1,7 @@
 import { Request } from "express";
 import { TotoMessage } from "../../TotoMessage";
 import { ValidationError } from "../../../validation/Validator";
-import { APubSubRequestFilter, APubSubRequestValidator, IPubSub, MessageDestination } from "../../MessageBus";
+import { APubSubRequestFilter, APubSubRequestValidator, IPubSub, MessageDestination } from "../../IMessageBus";
 import { googleAuthCheck } from "../../../validation/GoogleAuthCheck";
 import { Logger } from "../../../logger/TotoLogger";
 import { PubSub, Topic } from "@google-cloud/pubsub";
@@ -31,30 +31,30 @@ export class GCPPubSubImpl extends IPubSub {
 
         const logger = Logger.getInstance();
 
-        logger.compute(message.cid, "Publishing the event [ " + message.type + " ] for object with id [ " + message.id + " ]. The following message is to be published: [ " + message.msg + " ]", "info");
+        logger.eventOut(message.cid, "Publishing the event [ " + message.type + " ] for object with id [ " + message.id + " ]. The following message is to be published: [ " + message.msg + " ]", "info");
 
         let topic = findTopicInCache(destination.topic!);
 
         if (!topic) {
 
-            logger.compute(message.cid, `Instantiating PubSub Topic for topic [${destination.topic}]`, "info");
+            logger.eventOut(message.cid, `Instantiating PubSub Topic for topic [${destination.topic}]`, "info");
 
             topic = new TopicWrapper(destination.topic!, this.pubsub.topic(destination.topic!));
             topics.push(topic);
 
-            logger.compute(message.cid, `PubSub Topic [${destination.topic}] instantiated!`, "info");
+            logger.eventOut(message.cid, `PubSub Topic [${destination.topic}] instantiated!`, "info");
         }
 
         try {
 
             await topic.topic.publishMessage({ data: Buffer.from(message as any) as any });
 
-            logger.compute(message.cid, "Successfully published the event [ " + message.type + " ]", "info");
+            logger.eventOut(message.cid, "Successfully published the event [ " + message.type + " ]", "info");
 
         } catch (e: any) {
 
-            logger.compute(message.cid, "Publishing the event [ " + message.type + " ] failed. The following message had to be published: [ " + message.msg + " ]", "error");
-            logger.compute(message.cid, e, 'error');
+            logger.eventOut(message.cid, "Publishing the event [ " + message.type + " ] failed. The following message had to be published: [ " + message.msg + " ]", "error");
+            logger.eventOut(message.cid, e, 'error');
             console.error(e);
 
         }

@@ -18,5 +18,7 @@ export { RegistryCache } from './integration/RegistryCache'
 export { TotoRegistryAPI } from './integration/TotoRegistryAPI'
 export { TotoAPI, TotoAPIRequest, TotoAPIResponseConstructor } from './integration/TotoAPI'
 export { TotoMicroservice, TotoMicroserviceConfiguration } from './core/TotoMicroservice'
-export { TotoMessageBus, MessageDestination, TotoMessageHandler, APubSubRequestFilter, APubSubRequestValidator, IPubSub, TopicIdentifier } from './evt/MessageBus'
 export { TotoEnvironment, SupportedHyperscalers, AWSConfiguration, AzureConfiguration, GCPConfiguration } from './model/TotoEnvironment'
+export { TotoMessageBus, MessageHandlerRegistrationOptions, TopicIdentifier, TotoMessageBusConfiguration } from './evt/MessageBus';
+export { IPubSub, IMessageBus, IQueue, APubSubRequestFilter, APubSubRequestValidator, MessageDestination } from './evt/IMessageBus';
+export { TotoMessageHandler, ProcessingResponse } from './evt/TotoMessageHandler';
