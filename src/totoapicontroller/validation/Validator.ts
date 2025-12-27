@@ -39,7 +39,7 @@ export class Validator {
 
   props: ValidatorProps;
   logger: Logger;
-  config: TotoControllerConfig;
+  // config: TotoControllerConfig;
   debugMode: boolean
 
   /**
@@ -50,7 +50,7 @@ export class Validator {
   constructor(config: TotoControllerConfig, logger: Logger, debugMode: boolean = false) {
     this.props = config.getProps();
     this.logger = logger;
-    this.config = config;
+    // this.config = config;
     this.debugMode = debugMode;
 
     if (debugMode) this.logger.compute("", `[Validator Debug] - Constructing Validator with Config props: ${JSON.stringify(this.props)}`)
@@ -175,6 +175,10 @@ export class LazyValidator extends Validator {
 }
 
 export class ConfigMock extends TotoControllerConfig {
+  
+  getMongoSecretNames(): { userSecretName: string; pwdSecretName: string; } | null {
+    throw new Error("Method not implemented.");
+  }
   
   constructor() {
     super({apiName: "fake-api"});

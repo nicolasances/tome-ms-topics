@@ -3,7 +3,7 @@ import { ExecutionContext } from "../model/ExecutionContext";
 import { TotoDelegate } from "../model/TotoDelegate";
 import { UserContext } from "../model/UserContext";
 
-export class SmokeDelegate implements TotoDelegate {
+export class SmokeDelegate extends TotoDelegate {
 
     async do(req: Request, userContext: UserContext | undefined, execContext: ExecutionContext): Promise<SmokeResponse> {
 

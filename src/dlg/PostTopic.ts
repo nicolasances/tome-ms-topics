@@ -3,7 +3,6 @@ import { ControllerConfig } from "../Config";
 import { TopicsStore } from "../store/TopicsStore";
 import { Topic } from "../model/Topic";
 import moment from "moment-timezone";
-import { EventPublisher, EVENTS } from "../evt/EventPublisher";
 import { ExecutionContext, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
 
 
@@ -40,7 +39,7 @@ export class PostTopic extends TotoDelegate {
             const id = await topicStore.saveTopic(topic);
 
             // Publish the event
-            await new EventPublisher(execContext, "tometopics").publishEvent(id, EVENTS.topicCreated, `Topic ${body.name} created by user ${user}`, topic);
+            // await new EventPublisher(execContext, "tometopics").publishEvent(id, EVENTS.topicCreated, `Topic ${body.name} created by user ${user}`, topic);
 
             // Return something
             return {id: id}

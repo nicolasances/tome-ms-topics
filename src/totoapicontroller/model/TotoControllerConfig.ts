@@ -1,15 +1,8 @@
 import { Db, MongoClient } from "mongodb";
-import { Logger } from "../logger/TotoLogger";
 import { SecretsManager, TotoRuntimeError } from "..";
 import { ValidatorProps } from "./ValidatorProps";
 
 export abstract class TotoControllerConfig {
-
-    public configuration: ConfigurationData;
-    public logger: Logger | undefined;
-
-    public hyperscaler: "aws" | "gcp" | "local";
-    public env: string;
 
     protected mongoHost: string | undefined;
     protected mongoUser: string | undefined;
@@ -19,25 +12,13 @@ export abstract class TotoControllerConfig {
     protected expectedAudience: string | undefined;
     protected secretsManager: SecretsManager;
 
-    public options: TotoControllerConfigOptions | undefined;
     public totoRegistryEndpoint: string | undefined;
 
     private static mongoClient: MongoClient | null = null;
     private static mongoClientPromise: Promise<MongoClient> | null = null;
 
-    constructor(configuration: ConfigurationData, options?: TotoControllerConfigOptions) {
-
-        this.hyperscaler = process.env.HYPERSCALER as "aws" | "gcp" | "local" ?? options?.defaultHyperscaler ?? "gcp";
-
-        this.env = (this.hyperscaler == 'aws' || this.hyperscaler == 'local') ? (process.env.ENVIRONMENT ?? 'dev') : process.env.GCP_PID ?? 'dev';
-
-        // Load the Secrets Manager
-        const secretsManagerLocation = this.hyperscaler == 'local' ? this.options?.defaultSecretsManagerLocation ?? "gcp" : this.hyperscaler;
-        this.secretsManager = new SecretsManager(secretsManagerLocation, this.env, this.logger!);  // Use GCP Secrets Manager when local
-
-        this.configuration = configuration;
-        this.options = options;
-
+    constructor(secretsManager: SecretsManager) {
+        this.secretsManager = secretsManager;
     }
 
     /**
@@ -80,6 +61,8 @@ export abstract class TotoControllerConfig {
 
     }
 
+    public setSecretsManager(secretsManager: SecretsManager) { this.secretsManager = secretsManager; }
+
     /**
      * Abstract method to be implemented by subclasses to return the names of the secrets
      * used for MongoDB authentication.
@@ -100,9 +83,7 @@ export abstract class TotoControllerConfig {
     /**
      * Return the JWT Token Signing Key for custom tokens
      */
-    getSigningKey(): string {
-        return this.jwtSigningKey!;
-    }
+    getSigningKey(): string { return this.jwtSigningKey!; }
 
     /**
      * Returns the expected audience. 
@@ -110,20 +91,9 @@ export abstract class TotoControllerConfig {
      * The audience is extracted from the token and compared with the expected audience, to make sure 
      * that the token was issued for the correct purpose (audience).
      */
-    getExpectedAudience(): string {
-        return String(this.expectedAudience)
-    }
+    getExpectedAudience(): string { return String(this.expectedAudience); }
 
-    /**
-     * Returns the name of the API (service, microservice) managed by this controller.
-     */
-    getAPIName(): string {
-        return this.configuration.apiName;
-    }
-
-    getTotoRegistryEndpoint(): string {
-        return String(this.totoRegistryEndpoint);
-    }
+    getTotoRegistryEndpoint(): string { return String(this.totoRegistryEndpoint); }
 
     /**
      * Returns a connected MongoDB Database instance.
@@ -133,7 +103,7 @@ export abstract class TotoControllerConfig {
      * 
      * @returns the requested Db instance
      */
-    async getMongoDb(dbName: string): Promise<Db> { 
+    async getMongoDb(dbName: string): Promise<Db> {
 
         const client = await this.getMongoClient(dbName);
 
@@ -192,21 +162,12 @@ export abstract class TotoControllerConfig {
 
 }
 
-export interface ConfigurationData {
-    apiName: string;
-}
-
-export class TotoControllerConfigOptions {
-    defaultHyperscaler: "aws" | "gcp" = "gcp";
-    defaultSecretsManagerLocation: "aws" | "gcp" = "gcp";
-}
-
 const shutdown = async () => {
 
     console.log('Shutting down gracefully...');
-    
+
     await TotoControllerConfig.closeMongoClient();
-    
+
     process.exit(0);
 };
 

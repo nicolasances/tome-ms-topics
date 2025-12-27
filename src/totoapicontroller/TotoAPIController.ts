@@ -15,11 +15,17 @@ import { TotoPathOptions } from './model/TotoPathOptions';
 import path from 'path';
 import { TotoRegistryAPI } from './integration/TotoRegistryAPI';
 import { RegistryCache } from './integration/RegistryCache';
+import { TotoEnvironment } from './TotoMicroservice';
 
 export class TotoControllerOptions {
     debugMode?: boolean = false
     basePath?: string = undefined   // Use to prepend a base path to all API paths, e.g. '/api/v1' or '/expenses/v1'
     port?: number                   // Use to define the port on which the Express app will listen. Default is 8080
+}
+
+export interface TotoControllerProps {
+    apiName: string;
+    environment: TotoEnvironment;
 }
 
 /**
@@ -35,6 +41,7 @@ export class TotoAPIController {
     apiName: string;
     logger: Logger;
     validator: Validator = new LazyValidator();
+    props: TotoControllerProps;
     config: TotoControllerConfig;
     options: TotoControllerOptions;
 
@@ -44,10 +51,11 @@ export class TotoAPIController {
      * - apiName              : (mandatory) - the name of the api (e.g. expenses)
      * - config               : (mandatory) - a TotoControllerConfig instance
      */
-    constructor(config: TotoControllerConfig, options: TotoControllerOptions = new TotoControllerOptions()) {
+    constructor(props: TotoControllerProps, options: TotoControllerOptions = {}) {
 
         this.app = express();
-        this.apiName = config.getAPIName();
+        this.props = props;
+        this.apiName = props.apiName;
         this.logger = new Logger(this.apiName)
         this.config = config;
         this.options = {
@@ -55,8 +63,6 @@ export class TotoAPIController {
             basePath: options.basePath,
             port: options.port ?? 8080
         };
-
-        this.config.logger = this.logger;
 
         // Log some configuration properties
         if (options.debugMode) this.logger.compute("INIT", `[TotoAPIController Debug] - Config Properties: ${JSON.stringify(config.getProps())}`)
@@ -75,8 +81,8 @@ export class TotoAPIController {
 
         // Add the standard Toto paths
         // Add the basic SMOKE api and /health endpoint. 
-        this.path('GET', '/', new SmokeDelegate(), { noAuth: true, contentType: 'application/json', ignoreBasePath: true });
-        this.path('GET', '/health', new SmokeDelegate(), { noAuth: true, contentType: 'application/json', ignoreBasePath: true });
+        this.path('GET', '/', new SmokeDelegate(null as any, this.config, this.logger), { noAuth: true, contentType: 'application/json', ignoreBasePath: true });
+        this.path('GET', '/health', new SmokeDelegate(null as any, this.config, this.logger), { noAuth: true, contentType: 'application/json', ignoreBasePath: true });
 
         // Bindings
         this.staticContent = this.staticContent.bind(this);
@@ -86,18 +92,12 @@ export class TotoAPIController {
 
     async init() {
 
-        await this.config.load();
-
         this.validator = new Validator(this.config, this.logger, this.options.debugMode);
 
         // Register this API with Toto API Registry
-        // But do not register if the hyperscaler is "local" (we're running locally)
-        if (this.config.hyperscaler != 'local') {
+        const registrationResponse = await new TotoRegistryAPI(this.config).registerAPI({ apiName: this.apiName, basePath: this.options.basePath?.replace("/", ""), hyperscaler: this.props.environment.hyperscaler });
 
-            const registrationResponse = await new TotoRegistryAPI(this.config).registerAPI({ apiName: this.apiName, basePath: this.options.basePath?.replace("/", ""), hyperscaler: this.config.hyperscaler });
-
-            this.logger.compute("INIT", `API ${this.apiName} successfully registered with Toto API Registry: ${JSON.stringify(registrationResponse)}`, 'info');
-        }
+        this.logger.compute("INIT", `API ${this.apiName} successfully registered with Toto API Registry: ${JSON.stringify(registrationResponse)}`, 'info');
 
         // Download all Toto API Endpoints and cache them 
         RegistryCache.getInstance(this.config).refresh();

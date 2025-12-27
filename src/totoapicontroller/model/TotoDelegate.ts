@@ -3,10 +3,11 @@ import { ExecutionContext } from "./ExecutionContext";
 import { UserContext } from "./UserContext";
 import { TotoMessageBus } from "../evt/MessageBus";
 import { TotoControllerConfig } from "./TotoControllerConfig";
+import { Logger } from "../logger/TotoLogger";
 
 export abstract class TotoDelegate {
 
-    constructor(protected messageBus: TotoMessageBus, protected config: TotoControllerConfig) {}
+    constructor(protected messageBus: TotoMessageBus, protected config: TotoControllerConfig, protected logger: Logger) {}
 
     abstract do(req: Request | FakeRequest, userContext: UserContext | undefined, execContext: ExecutionContext): Promise<any>
 

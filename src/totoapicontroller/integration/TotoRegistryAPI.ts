@@ -1,6 +1,7 @@
 import http from "request";
 import { newTotoServiceToken, TotoRuntimeError, TotoControllerConfig, Logger } from "..";
 import { v4 as uuidv4 } from 'uuid';
+import { SupportedHyperscalers } from "../TotoMicroservice";
 
 export class TotoRegistryAPI {
 
@@ -78,7 +79,7 @@ export interface RegisterAPIRequest {
 
     apiName: string;        // e.g. toto-ms-ex1
     endpointURL?: string;    // e.g. https://api.example.com/toto-ms-ex1/ex1 (includes basePath, if any)
-    hyperscaler?: 'aws' | 'gcp' | 'local';  // e.g. 'aws' or 'gcp' (if endpointURL is not provided)
+    hyperscaler?: SupportedHyperscalers;  // e.g. 'aws' or 'gcp' (if endpointURL is not provided)
     basePath?: string;      // e.g. 'ex1' (if endpointURL is not provided)
 
 }

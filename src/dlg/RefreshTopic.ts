@@ -2,6 +2,7 @@ import { Request } from "express";
 import { ControllerConfig } from "../Config";
 import { TopicsStore } from "../store/TopicsStore";
 import { ExecutionContext, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
+import { EVENTS } from "../evt/Events";
 
 
 export class RefreshTopic extends TotoDelegate {
@@ -33,8 +34,14 @@ export class RefreshTopic extends TotoDelegate {
             await topicStore.updateTopicMetadata(topicId, { flashcardsGenerationComplete: false });
 
             // Publish the event
-            await 
-            // await new EventPublisher(execContext, "tometopics").publishEvent(topicId, EVENTS.topicRefreshed, `Topic ${topicId} refreshed by user ${user}`, preexistingTopic);
+            this.messageBus.publishMessage({topic: "tometopics"}, {
+                cid: cid!,
+                id: topicId,
+                type: EVENTS.topicRefreshed, 
+                msg: `Topic ${topicId} refreshed by user ${user}`,
+                timestamp: new Date().toISOString(),
+                data: preexistingTopic
+            })
 
             // Return something
             return { refreshed: true }

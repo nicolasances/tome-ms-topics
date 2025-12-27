@@ -4,6 +4,8 @@ import { TotoMessageBus, TotoMessageHandler } from "./evt/MessageBus";
 import { TotoControllerConfig } from "./model/TotoControllerConfig";
 import { TotoDelegate } from "./model/TotoDelegate";
 import { TotoAPIController } from "./TotoAPIController";
+import { SecretsManager } from "./util/CrossCloudSecret";
+import { Logger } from "./logger/TotoLogger";
 
 export class TotoMicroservice {
 
@@ -25,17 +27,27 @@ export class TotoMicroservice {
         if (TotoMicroservice.instance) return TotoMicroservice.instance;
         if (TotoMicroservice.instancePromise) return TotoMicroservice.instancePromise;
 
-        TotoMicroservice.instancePromise = config.config.load().then(() => {
+        // Instantiate the Microservice custom configuration
+        const customConfig = new config.config(
+            new SecretsManager(config.environment)
+        );
+
+        TotoMicroservice.instancePromise = customConfig.load().then(() => {
 
             // Create the API controller
-            const apiController = new TotoAPIController(config.config, { basePath: config.basePath });
+            const apiController = new TotoAPIController(customConfig, { basePath: config.basePath });
+            const logger = new Logger(config.apiName);
+
+            // Determine message bus implementations based on the hyperscaler
+            const awsMessageBus = config.environment.hyperscaler === "aws" ? new SNSImpl({ awsRegion: (config.environment.hyperscalerConfiguration as AWSConfiguration).awsRegion }) : undefined;
+            const gcpMessageBus = config.environment.hyperscaler === "gcp" ? new GCPPubSubImpl({ expectedAudience: customConfig.getExpectedAudience() }) : undefined;
 
             // Create the message bus
             const bus = new TotoMessageBus({
                 controller: apiController,
                 messageBusImplementations: {
-                    gcp: new GCPPubSubImpl({ expectedAudience: config.config.getExpectedAudience() }),
-                    aws: new SNSImpl({ awsRegion: process.env.AWS_REGION || "eu-north-1" })
+                    gcp: gcpMessageBus,
+                    aws: awsMessageBus
                 }
             });
 
@@ -51,14 +63,14 @@ export class TotoMicroservice {
                 for (const endpoint of config.apiEndpoints) {
 
                     // Create an instance of the delegate
-                    const delegateInstance = new endpoint.delegate(bus, config.config);
+                    const delegateInstance = new endpoint.delegate(bus, customConfig, logger);
 
                     // Add the endpoint to the controller
                     apiController.path(endpoint.method, endpoint.path, delegateInstance);
                 }
             }
 
-            return new TotoMicroservice(config.config, apiController, bus);
+            return new TotoMicroservice(customConfig, apiController, bus);
         });
 
         return TotoMicroservice.instancePromise;
@@ -71,8 +83,10 @@ export class TotoMicroservice {
 }
 
 export interface TotoMicroserviceConfiguration {
+    apiName: string;
     basePath?: string;
-    config: TotoControllerConfig;
+    environment: TotoEnvironment;
+    config: new (secretsManager: SecretsManager) => TotoControllerConfig;
     apiEndpoints?: TotoAPIEndpoint[];
     messageHandlers?: TotoMessageHandler[];
 }
@@ -80,5 +94,23 @@ export interface TotoMicroserviceConfiguration {
 export interface TotoAPIEndpoint {
     method: 'GET' | 'POST' | 'PUT' | 'DELETE';
     path: string;
-    delegate: new (messageBus: TotoMessageBus, config: TotoControllerConfig) => TotoDelegate;
+    delegate: new (messageBus: TotoMessageBus, config: TotoControllerConfig, logger: Logger) => TotoDelegate;
+}
+
+export type SupportedHyperscalers = "aws" | "gcp" | "azure";
+export interface GCPConfiguration {
+    gcpProjectId: string;
+}
+
+export interface TotoEnvironment {
+    hyperscaler: SupportedHyperscalers;
+    hyperscalerConfiguration: GCPConfiguration | AWSConfiguration | AzureConfiguration;
+}
+
+export interface AWSConfiguration {
+    environment: "dev" | "test" | "prod";
+    awsRegion: string;
+}
+export interface AzureConfiguration {
+    azureRegion: string;
 }

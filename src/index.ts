@@ -7,11 +7,16 @@ import { RefreshTopic } from "./dlg/RefreshTopic";
 import { OnFlashcardsCreated } from "./evt/handlers/OnFlashcardsCreated";
 import { OnPracticeFinished } from "./evt/handlers/OnPracticeFinished";
 import { OnTopicScraped } from "./evt/handlers/OnTopicScraped";
-import { TotoMicroservice } from "./totoapicontroller/TotoMicroservice";
+import { SupportedHyperscalers, TotoMicroservice } from "./totoapicontroller/TotoMicroservice";
 
 TotoMicroservice.init({
-    config: new ControllerConfig({ apiName: "tome-ms-topics" }, { defaultHyperscaler: "aws", defaultSecretsManagerLocation: "aws" }),
+    apiName: "tome-ms-topics",
     basePath: '/tometopics',
+    environment: {
+        hyperscaler: process.env.HYPERSCALER as SupportedHyperscalers || "aws",
+        hyperscalerConfiguration: { awsRegion: process.env.AWS_REGION || "eu-north-1", environment: process.env.ENVIRONMENT as "dev" | "test" | "prod" || "dev" }
+    },
+    config: ControllerConfig,
     apiEndpoints: [
         { method: 'POST', path: '/topics', delegate: PostTopic },
         { method: 'GET', path: '/topics', delegate: GetTopics },
