@@ -3,6 +3,7 @@ import { WithId } from "mongodb";
 export class Topic {
 
     id?: string; 
+    topicCode?: string;
     name: string; 
     blogURL: string; 
     createdOn: string; // Date in format YYYYMMDD
@@ -12,8 +13,10 @@ export class Topic {
     flashcardsCount?: number; 
     flashcardsGenerationComplete?: boolean; // Whether the flashcard generation is complete
     numSections?: number; // Number of sections in the topic
+    sections?: string[]; // Section codes in the topic
 
-    constructor(name: string, blogURL: string, createdOn: string, user: string, lastPracticed?: string, generation?: string, flashcardsCount?: number, numSections?: number, flashcardsGenerationComplete?: boolean) {
+    constructor(name: string, blogURL: string, createdOn: string, user: string, lastPracticed?: string, generation?: string, flashcardsCount?: number, numSections?: number, flashcardsGenerationComplete?: boolean, topicCode?: string, sections?: string[]) {
+        this.topicCode = topicCode;
         this.name = name;
         this.blogURL = blogURL;
         this.createdOn = createdOn;
@@ -23,11 +26,12 @@ export class Topic {
         this.flashcardsCount = flashcardsCount;
         this.flashcardsGenerationComplete = flashcardsGenerationComplete;
         this.numSections = numSections;
+        this.sections = sections;
     }
 
     static fromBSON(data: WithId<any>): Topic {
         
-        let topic = new Topic(data.name, data.blogURL, data.createdOn, data.user, data.lastPracticed, data.generation, data.flashcardsCount, data.numSections, data.isFlashcardGenerationComplete);
+        let topic = new Topic(data.name, data.blogURL, data.createdOn, data.user, data.lastPracticed, data.generation, data.flashcardsCount, data.numSections, data.isFlashcardGenerationComplete, data.topicCode, data.sections);
         topic.id = data._id; 
 
         return topic;
@@ -35,6 +39,7 @@ export class Topic {
 
     toBSON(): any {
         return {
+            topicCode: this.topicCode,
             name: this.name,
             blogURL: this.blogURL,
             createdOn: this.createdOn,
@@ -44,6 +49,7 @@ export class Topic {
             flashcardsCount: this.flashcardsCount,
             numSections: this.numSections,
             isFlashcardGenerationComplete: this.flashcardsGenerationComplete,
+            sections: this.sections,
         };
     }
 
