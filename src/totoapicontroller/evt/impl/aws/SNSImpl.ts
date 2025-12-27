@@ -4,15 +4,20 @@ import { Logger, ValidationError } from "../../..";
 import https from "https";
 import moment from "moment-timezone";
 import * as crypto from 'crypto';
-import { APubSubRequestFilter, APubSubRequestValidator, IPubSub, MessageDestination, ProcessingResponse } from "../../MessageBus";
+import { APubSubRequestFilter, APubSubRequestValidator, IPubSub, MessageDestination, ProcessingResponse, TopicIdentifier } from "../../MessageBus";
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 
+export interface SNSConfiguration {
+    awsRegion: string;
+}
+
 export class SNSImpl extends IPubSub {
+
     private snsClient: SNSClient;
 
-    constructor({awsRegion}: {awsRegion: string}) {
-        super(); 
-        this.snsClient = new SNSClient({ region: awsRegion || "eu-north-1" });
+    constructor(private config: SNSConfiguration) {
+        super();
+        this.snsClient = new SNSClient({ region: this.config.awsRegion || "eu-north-1" });
     }
 
     getRequestValidator(): APubSubRequestValidator {
@@ -27,14 +32,25 @@ export class SNSImpl extends IPubSub {
     async publishMessage(destination: MessageDestination, message: TotoMessage): Promise<void> {
 
         const logger = Logger.getInstance();
-        
+
         if (!destination.topic) {
-            throw new ValidationError(400, "Topic ARN is required for SNS publishing");
+            throw new ValidationError(400, "Topic name is required for SNS publishing");
+        }
+
+        // Check that the topic is in the form of an ARN
+        if (!destination.topic.startsWith("arn:aws:sns:")) {
+            throw new ValidationError(400, `Invalid SNS topic ARN: ${destination.topic}. It must start with 'arn:aws:sns:'`);
+        }
+
+        const topicArn = destination.topic as string;
+
+        if (!topicArn) {
+            throw new ValidationError(400, `Topic ARN not found for topic name: ${destination.topic}. Make sure the topic ARN is loaded.`);
         }
 
         try {
             const command = new PublishCommand({
-                TopicArn: destination.topic,
+                TopicArn: topicArn,
                 Message: JSON.stringify(message),
                 MessageAttributes: {
                     messageType: {

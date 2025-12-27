@@ -4,17 +4,17 @@ import fs from 'fs-extra';
 import express, { Express, Request, Response } from 'express'
 import { v4 as uuidv4 } from 'uuid';
 
-import { Logger } from './logger/TotoLogger'
-import { TotoControllerConfig } from './model/TotoControllerConfig'
-import { ValidationError, Validator } from './validation/Validator';
-import { TotoDelegate } from './model/TotoDelegate';
-import { SmokeDelegate } from './dlg/SmokeDelegate';
-import { TotoRuntimeError } from './model/TotoRuntimeError';
-import { TotoPathOptions } from './model/TotoPathOptions';
+import { Logger } from '../logger/TotoLogger'
+import { TotoControllerConfig } from '../model/TotoControllerConfig'
+import { ValidationError, Validator } from '../validation/Validator';
+import { TotoDelegate } from '../model/TotoDelegate';
+import { SmokeDelegate } from '../dlg/SmokeDelegate';
+import { TotoRuntimeError } from '../model/TotoRuntimeError';
+import { TotoPathOptions } from '../model/TotoPathOptions';
 import path from 'path';
-import { TotoRegistryAPI } from './integration/TotoRegistryAPI';
-import { RegistryCache } from './integration/RegistryCache';
-import { TotoEnvironment } from './TotoMicroservice';
+import { TotoRegistryAPI } from '../integration/TotoRegistryAPI';
+import { RegistryCache } from '../integration/RegistryCache';
+import { TotoEnvironment } from '..';
 
 export class TotoControllerOptions {
     debugMode?: boolean = false

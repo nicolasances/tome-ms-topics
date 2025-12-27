@@ -1,12 +1,20 @@
 import { Request } from "express";
 import { TotoMessage } from "./TotoMessage";
-import { TotoAPIController, TotoControllerConfig, TotoRuntimeError } from "..";
+import { AWSConfiguration, TotoAPIController, TotoControllerConfig, TotoEnvironment, TotoRuntimeError, ValidationError } from "..";
 import { v4 as uuidv4 } from 'uuid';
+import { SNSImpl } from "./impl/aws/SNSImpl";
+import { GCPPubSubImpl } from "./impl/gcp/GCPPubSubImpl";
 
 export interface TotoMessageBusConfiguration {
     controller: TotoAPIController;
     customConfig: TotoControllerConfig;
-    messageBusImplementation: IMessageBus;
+    environment: TotoEnvironment;
+    topics?: TopicIdentifier[];
+}
+
+export interface TopicIdentifier {
+    logicalName: string;        // Logical name used in the app e.g., "user-updates-topic"
+    resourceIdentifier: string; // Identifier of the topic used in the hyperscaler e.g., ARN for AWS, Topic Name for GCP
 }
 
 /**
@@ -46,11 +54,11 @@ export class TotoMessageBus {
 
         this.config = config;
 
-        // Register the provided bus implementation
-        this.messageBus = config.messageBusImplementation;
-
         // Store the API Controller reference
         this.apiController = config.controller;
+
+        // Instantiate the Message Bus implementation
+        this.messageBus = this.getMessageBusImplementation();
 
         // IMPORTANT! Register the message bus's handler (filter) in API Controller and Pull Queues and PubSubs
         // 1. For PULL queue implementations, register the MessageBus PULL callback so that messages pulled by the queue are routed to the MessageBus first
@@ -60,6 +68,15 @@ export class TotoMessageBus {
 
         // 2. For PUSH Pub/Sub implementations, register the MessageBus PUSH callback in the API Controller so that all messages received on the endpoint are routed to the MessageBus
         this.apiController.registerPubSubMessageEndpoint("/events", this.onPushMessageReceived.bind(this));
+    }
+
+    public getMessageBusImplementation(): any {
+
+        if (this.config.environment.hyperscaler === "aws") return new SNSImpl({ awsRegion: (this.config.environment.hyperscalerConfiguration as AWSConfiguration).awsRegion });
+
+        if (this.config.environment.hyperscaler === "gcp") return new GCPPubSubImpl({ expectedAudience: this.config.customConfig.getExpectedAudience() });
+
+        return null;
     }
 
     /**
@@ -85,7 +102,31 @@ export class TotoMessageBus {
      * @returns 
      */
     public publishMessage(destination: MessageDestination, message: TotoMessage): Promise<void> {
-        return this.messageBus.publishMessage(destination, message);
+
+        // 1. Validate that the destination has the right properties set
+        // 1.1. Check properties
+        if (this.messageBus instanceof IPubSub && !destination.topic) throw new ValidationError(400, "MessageDestination.topic is required for Pub/Sub message buses");
+        if (this.messageBus instanceof IQueue && !destination.queue) throw new ValidationError(400, "MessageDestination.queue is required for Queue message buses");
+
+        // 2. Get the destination based on the environment and message bus implementation
+        let resolvedDestination: MessageDestination;
+
+        // 2.1. For Pub/Sub, resolve the topic name
+        if (this.messageBus instanceof IPubSub) {
+
+            const topicIdentifier = this.config.topics?.find(t => t.logicalName === destination.topic);
+
+            if (!topicIdentifier) throw new ValidationError(400, `Topic [${destination.topic}] not found in configuration for publishing message of type [${message.type}]. This is a configuration error in your application.`);
+
+            resolvedDestination = new MessageDestination({ topic: topicIdentifier.resourceIdentifier });
+        }
+        // 2.2. For Queue, just pass through for now
+        else {
+            resolvedDestination = destination;
+        }
+
+        // Invoke the handler
+        return this.messageBus.publishMessage(resolvedDestination, message);
     }
 
     /**
@@ -272,9 +313,9 @@ export abstract class TotoMessageHandler {
      * @returns 
      */
     public async processMessage(msg: TotoMessage): Promise<ProcessingResponse> {
-        
+
         this.cid = msg.cid || uuidv4();
-        
+
         return this.onMessage(msg);
     }
 

@@ -1,4 +1,4 @@
-import { TotoControllerConfig, ValidatorProps } from "./totoapicontroller";
+import { TotoControllerConfig, APIOptions } from "./totoapicontroller";
 
 const dbName = 'tometopics';
 const collections = {
@@ -15,7 +15,7 @@ export class ControllerConfig extends TotoControllerConfig {
         return { userSecretName: 'tome-ms-topics-mongo-user', pwdSecretName: 'tome-ms-topics-mongo-pswd' };
     }
 
-    getProps(): ValidatorProps {
+    getProps(): APIOptions {
         return {
             noCorrelationId: true
         }

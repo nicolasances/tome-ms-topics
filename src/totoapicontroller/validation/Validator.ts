@@ -1,5 +1,5 @@
 
-import { ValidatorProps } from "../model/ValidatorProps";
+import { APIOptions } from "../model/APIConfiguration";
 import { Request } from "express";
 import * as jwt from 'jsonwebtoken';
 import { UserContext } from "../model/UserContext";
@@ -38,7 +38,7 @@ const getAuthProvider = (tokenJson: any): string => {
  */
 export class Validator {
 
-  props: ValidatorProps;
+  props: APIOptions;
   config: TotoControllerConfig;
   debugMode: boolean
 
@@ -189,7 +189,7 @@ export class ConfigMock extends TotoControllerConfig {
   async load(): Promise<any> {
     return {}
   }
-  getProps(): ValidatorProps {
+  getProps(): APIOptions {
     return {}
   }
   getExpectedAudience(): string {

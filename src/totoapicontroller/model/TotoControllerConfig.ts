@@ -1,6 +1,6 @@
 import { Db, MongoClient } from "mongodb";
 import { SecretsManager, TotoRuntimeError } from "..";
-import { ValidatorProps } from "./ValidatorProps";
+import { APIOptions } from "./APIConfiguration";
 
 export abstract class TotoControllerConfig {
 
@@ -78,7 +78,7 @@ export abstract class TotoControllerConfig {
     /**
      * Returns the Validator Properties
      */
-    abstract getProps(): ValidatorProps
+    abstract getProps(): APIOptions
 
     /**
      * Return the JWT Token Signing Key for custom tokens

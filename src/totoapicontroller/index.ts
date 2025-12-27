@@ -1,4 +1,4 @@
-export { TotoAPIController, TotoControllerOptions } from './TotoAPIController';
+export { TotoAPIController, TotoControllerOptions } from './api/TotoAPIController';
 export { newTotoServiceToken } from './auth/TotoToken';
 export { TotoMessage } from './evt/TotoMessage'
 export { Logger } from './logger/TotoLogger'
@@ -8,7 +8,7 @@ export { FakeRequest, TotoDelegate } from './model/TotoDelegate'
 export { TotoPathOptions } from './model/TotoPathOptions'
 export { TotoRuntimeError } from './model/TotoRuntimeError'
 export { UserContext } from './model/UserContext'
-export { ValidatorProps } from './model/ValidatorProps'
+export { APIOptions, APIConfiguration, TotoAPIEndpoint } from './model/APIConfiguration'
 export { correlationId } from './util/CorrelationId'
 export { SecretsManager } from './util/CrossCloudSecret'
 export { basicallyHandleError } from './util/ErrorUtil'
@@ -17,4 +17,6 @@ export { ConfigMock, LazyValidator, ValidationError, Validator } from './validat
 export { RegistryCache } from './integration/RegistryCache'
 export { TotoRegistryAPI } from './integration/TotoRegistryAPI'
 export { TotoAPI, TotoAPIRequest, TotoAPIResponseConstructor } from './integration/TotoAPI'
-export { TotoMicroservice, TotoMicroserviceConfiguration } from './TotoMicroservice'
+export { TotoMicroservice, TotoMicroserviceConfiguration } from './core/TotoMicroservice'
+export { TotoMessageBus, MessageDestination, TotoMessageHandler, APubSubRequestFilter, APubSubRequestValidator, IPubSub, TopicIdentifier } from './evt/MessageBus'
+export { TotoEnvironment, SupportedHyperscalers, AWSConfiguration, AzureConfiguration, GCPConfiguration } from './model/TotoEnvironment'

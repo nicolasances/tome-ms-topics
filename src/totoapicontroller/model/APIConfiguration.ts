@@ -1,5 +1,25 @@
+import { TotoControllerConfig, TotoDelegate, TotoMessageBus } from "..";
 
-export interface ValidatorProps {
+export interface APIConfiguration {
+
+    /**
+     * The list of API endpoints to be registered
+     */
+    apiEndpoints: TotoAPIEndpoint[];
+
+    /**
+     * Options for API validation and configuration
+     */
+    apiOptions?: APIOptions;
+}
+
+export interface TotoAPIEndpoint {
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+    path: string;
+    delegate: new (messageBus: TotoMessageBus, config: TotoControllerConfig) => TotoDelegate;
+}
+
+export interface APIOptions {
 
     /**
      * If this property is set to true, authentication (through the Authorization header) is not necessary

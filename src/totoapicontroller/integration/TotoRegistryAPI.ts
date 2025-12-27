@@ -1,7 +1,7 @@
 import http from "request";
 import { newTotoServiceToken, TotoRuntimeError, TotoControllerConfig, Logger } from "..";
 import { v4 as uuidv4 } from 'uuid';
-import { SupportedHyperscalers } from "../TotoMicroservice";
+import { SupportedHyperscalers } from "../core/TotoMicroservice";
 
 export class TotoRegistryAPI {
 
