@@ -2,6 +2,7 @@ import { Request } from "express";
 import { ControllerConfig } from "../Config";
 import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
 import { TopicsStore } from "../store/TopicsStore";
+import { EVENTS } from "../evt/Events";
 
 
 export class DeleteTopic extends TotoDelegate {
@@ -30,7 +31,14 @@ export class DeleteTopic extends TotoDelegate {
             const deletedCount = await topicStore.deleteTopicById(req.params.id, user)
 
             // Publish the event
-            // if (deletedCount > 0) await new EventPublisher(execContext, "tometopics").publishEvent(req.params.id, EVENTS.topicDeleted, `Topic with id ${req.params.id} deleted by user ${user}`, topic);
+            if (deletedCount > 0) await this.messageBus.publishMessage({ topic: "tometopics" }, {
+                cid: this.cid!,
+                id: req.params.id,
+                type: EVENTS.topicDeleted,
+                msg: `Topic ${req.params.id} deleted by user ${user}`,
+                timestamp: new Date().toISOString(),
+                data: topic
+            })
 
             return { deletedCount: deletedCount }
 

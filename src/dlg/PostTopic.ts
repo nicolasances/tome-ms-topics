@@ -4,6 +4,7 @@ import { TopicsStore } from "../store/TopicsStore";
 import { Topic } from "../model/Topic";
 import moment from "moment-timezone";
 import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
+import { EVENTS } from "../evt/Events";
 
 
 export class PostTopic extends TotoDelegate {
@@ -15,8 +16,8 @@ export class PostTopic extends TotoDelegate {
         const config = this.config as ControllerConfig;
 
         // Validate mandatory fields
-        if (!body.name) throw new ValidationError(400, "No name provided"); 
-        if (!body.blogURL) throw new ValidationError(400, "No Blog URL provided"); 
+        if (!body.name) throw new ValidationError(400, "No name provided");
+        if (!body.blogURL) throw new ValidationError(400, "No Blog URL provided");
 
         // Extract user
         const user = userContext.email;
@@ -25,7 +26,7 @@ export class PostTopic extends TotoDelegate {
 
             const db = await config.getMongoDb(config.getDBName());
 
-            const topicStore = new TopicsStore(db, config); 
+            const topicStore = new TopicsStore(db, config);
 
             // Check that the topic does not already exist
             const preexistingTopic = await topicStore.findTopicByName(body.name, user);
@@ -39,9 +40,17 @@ export class PostTopic extends TotoDelegate {
 
             // Publish the event
             // await new EventPublisher(execContext, "tometopics").publishEvent(id, EVENTS.topicCreated, `Topic ${body.name} created by user ${user}`, topic);
+            await this.messageBus.publishMessage({ topic: "tometopics" }, {
+                cid: this.cid!,
+                id: id,
+                type: EVENTS.topicCreated,
+                msg: `Topic ${id} created by user ${user}`,
+                timestamp: new Date().toISOString(),
+                data: topic
+            })
 
             // Return something
-            return {id: id}
+            return { id: id }
 
 
         } catch (error) {

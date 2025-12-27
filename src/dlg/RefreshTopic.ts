@@ -9,7 +9,6 @@ export class RefreshTopic extends TotoDelegate {
 
     async do(req: Request, userContext: UserContext): Promise<any> {
 
-        const body = req.body
         const logger = Logger.getInstance();
         const config = this.config as ControllerConfig;
 
@@ -33,7 +32,7 @@ export class RefreshTopic extends TotoDelegate {
             await topicStore.updateTopicMetadata(topicId, { flashcardsGenerationComplete: false });
 
             // Publish the event
-            this.messageBus.publishMessage({ topic: "tometopics" }, {
+            await this.messageBus.publishMessage({ topic: "tometopics" }, {
                 cid: this.cid!,
                 id: topicId,
                 type: EVENTS.topicRefreshed,
