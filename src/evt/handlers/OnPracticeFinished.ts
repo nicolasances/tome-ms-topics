@@ -1,17 +1,17 @@
 import { ControllerConfig } from "../../Config";
 import { Practice } from "../../model/Practice";
 import { TopicsStore } from "../../store/TopicsStore";
-import { ExecutionContext, TotoMessage, TotoRuntimeError, ValidationError } from "../../totoapicontroller";
+import { Logger, TotoMessage, TotoRuntimeError, ValidationError } from "../../totoapicontroller";
 import { ProcessingResponse, TotoMessageHandler } from "../../totoapicontroller/evt/MessageBus";
 
 export class OnPracticeFinished extends TotoMessageHandler {
 
     protected handledMessageType: string = 'practiceFinished';
 
-    async onMessage(msg: TotoMessage, execContext: ExecutionContext): Promise<ProcessingResponse> {
+    async onMessage(msg: TotoMessage): Promise<ProcessingResponse> {
 
-        const logger = execContext.logger;
-        const config = execContext.config as ControllerConfig;
+        const logger = Logger.getInstance();
+        const config = this.config as ControllerConfig;
         const cid = msg.cid;
 
         // This handler expects a Practice in the payload of the event

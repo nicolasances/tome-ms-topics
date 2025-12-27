@@ -9,6 +9,7 @@ import { AUTH_PROVIDERS } from "../model/AuthProviders";
 import { TotoPathOptions } from "../model/TotoPathOptions";
 import { Logger } from "../logger/TotoLogger";
 import { decodeJWT } from "../util/TokenUtil";
+import { SecretsManager } from "../util/CrossCloudSecret";
 
 const extractTokenFromAuthHeader = (authorizationHeader: string): string => {
   return String(authorizationHeader).substring('Bearer'.length + 1);
@@ -38,8 +39,7 @@ const getAuthProvider = (tokenJson: any): string => {
 export class Validator {
 
   props: ValidatorProps;
-  logger: Logger;
-  // config: TotoControllerConfig;
+  config: TotoControllerConfig;
   debugMode: boolean
 
   /**
@@ -47,14 +47,10 @@ export class Validator {
    * @param {object} props Propertiess
    * @param {object} logger the toto logger
    */
-  constructor(config: TotoControllerConfig, logger: Logger, debugMode: boolean = false) {
+  constructor(config: TotoControllerConfig, debugMode: boolean = false) {
     this.props = config.getProps();
-    this.logger = logger;
-    // this.config = config;
+    this.config = config;
     this.debugMode = debugMode;
-
-    if (debugMode) this.logger.compute("", `[Validator Debug] - Constructing Validator with Config props: ${JSON.stringify(this.props)}`)
-
   }
 
   /**
@@ -71,7 +67,9 @@ export class Validator {
     // Correlation ID 
     let cid: string = String(req.headers['x-correlation-id']) ?? "";
 
-    if (this.debugMode) this.logger.compute(cid, `[Validator Debug] - Validation starting with Config props: ${JSON.stringify(this.props)}`)
+    const logger = Logger.getInstance();
+
+    if (this.debugMode) logger.compute(cid, `[Validator Debug] - Validation starting with Config props: ${JSON.stringify(this.props)}`)
 
     // App Version
     let appVersion = req.headers['x-app-version'];
@@ -105,17 +103,17 @@ export class Validator {
         // Retrieve the auth provider from the JWT Token
         const authProvider = getAuthProvider(decodedToken);
 
-        if (this.debugMode === true) this.logger.compute(cid, `[Validator Debug] - Auth Provider: [${authProvider}]`)
+        if (this.debugMode === true) logger.compute(cid, `[Validator Debug] - Auth Provider: [${authProvider}]`)
 
         // Retrieve the audience that the token will be validated against
         // That is the audience that is expected to be found in the token
         const expectedAudience = this.config.getExpectedAudience();
 
-        if (this.debugMode === true) this.logger.compute(cid, `[Validator Debug] - Expected Audience: [${expectedAudience}]`)
+        if (this.debugMode === true) logger.compute(cid, `[Validator Debug] - Expected Audience: [${expectedAudience}]`)
 
         if (authProvider.toLowerCase() == AUTH_PROVIDERS.toto) {
 
-          if (this.debugMode === true) this.logger.compute(cid, `[Validator Debug] - Using Custom Auth Provider ${this.config.getProps().customAuthProvider}]. Verifying token`);
+          if (this.debugMode === true) logger.compute(cid, `[Validator Debug] - Using Toto Auth Provider]. Verifying token`);
 
           // Get the Toto JWT signing key
           const key = this.config.getSigningKey();
@@ -132,16 +130,16 @@ export class Validator {
         }
         else if (authProvider.toLowerCase() == AUTH_PROVIDERS.google) {
 
-          if (this.debugMode === true) this.logger.compute(cid, `[Validator Debug] - Using Google Auth Provider`)
+          if (this.debugMode === true) logger.compute(cid, `[Validator Debug] - Using Google Auth Provider`)
 
-          const googleAuthCheckResult = await googleAuthCheck(cid, authorizationHeader, String(expectedAudience), this.logger, this.debugMode)
+          const googleAuthCheckResult = await googleAuthCheck(cid, authorizationHeader, String(expectedAudience), logger, this.debugMode)
 
-          if (this.debugMode === true) this.logger.compute(cid, `[Validator Debug] - UserContext created by Google Auth Check: [${JSON.stringify(googleAuthCheck)}]`)
+          if (this.debugMode === true) logger.compute(cid, `[Validator Debug] - UserContext created by Google Auth Check: [${JSON.stringify(googleAuthCheck)}]`)
 
           return googleAuthCheckResult;
         }
         else {
-          if (this.debugMode === true) this.logger.compute(cid, `[Validator Debug] - UserContext will be null as no Auth Provider could be determined.`)
+          if (this.debugMode === true) logger.compute(cid, `[Validator Debug] - UserContext will be null as no Auth Provider could be determined.`)
         }
 
       }
@@ -169,19 +167,19 @@ export class ValidationError extends Error {
 export class LazyValidator extends Validator {
 
   constructor() {
-    super(new ConfigMock(), new Logger(""));
+    super(new ConfigMock());
   }
 
 }
 
 export class ConfigMock extends TotoControllerConfig {
-  
+
   getMongoSecretNames(): { userSecretName: string; pwdSecretName: string; } | null {
     throw new Error("Method not implemented.");
   }
-  
+
   constructor() {
-    super({apiName: "fake-api"});
+    super(new SecretsManager({ hyperscaler: "aws", hyperscalerConfiguration: { awsRegion: "eu-north-1", environment: "dev" } }));
   }
 
   getSigningKey(): string {

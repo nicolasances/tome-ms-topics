@@ -8,12 +8,10 @@ import { APubSubRequestFilter, APubSubRequestValidator, IPubSub, MessageDestinat
 import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
 
 export class SNSImpl extends IPubSub {
-    private logger: Logger;
     private snsClient: SNSClient;
 
     constructor({awsRegion}: {awsRegion: string}) {
         super(); 
-        this.logger = new Logger("SNSImpl");
         this.snsClient = new SNSClient({ region: awsRegion || "eu-north-1" });
     }
 
@@ -27,6 +25,8 @@ export class SNSImpl extends IPubSub {
      * @param message 
      */
     async publishMessage(destination: MessageDestination, message: TotoMessage): Promise<void> {
+
+        const logger = Logger.getInstance();
         
         if (!destination.topic) {
             throw new ValidationError(400, "Topic ARN is required for SNS publishing");
@@ -50,10 +50,10 @@ export class SNSImpl extends IPubSub {
 
             const response = await this.snsClient.send(command);
 
-            this.logger.compute(message.cid, `Message published to SNS topic ${destination.topic}. MessageId: ${response.MessageId}`);
+            logger.compute(message.cid, `Message published to SNS topic ${destination.topic}. MessageId: ${response.MessageId}`);
 
         } catch (error) {
-            this.logger.compute(message.cid, `Failed to publish message to SNS: ${error}`, "error");
+            logger.compute(message.cid, `Failed to publish message to SNS: ${error}`, "error");
             throw error;
         }
     }
@@ -65,7 +65,7 @@ export class SNSImpl extends IPubSub {
      */
     filter(req: Request): APubSubRequestFilter | null {
 
-        if (req.get('x-amz-sns-message-type') == 'SubscriptionConfirmation') return new SNSSubscriptionConfirmationFilter(this.logger);
+        if (req.get('x-amz-sns-message-type') == 'SubscriptionConfirmation') return new SNSSubscriptionConfirmationFilter();
 
         return null;
     }
@@ -79,11 +79,12 @@ export class SNSImpl extends IPubSub {
      */
     convert(envelope: Request): TotoMessage {
 
+        const logger = Logger.getInstance();
         const req = envelope;
 
         if (req.get('x-amz-sns-message-type') == 'SubscriptionConfirmation' || req.get('x-amz-sns-message-type') == 'UnsubscribeConfirmation') {
 
-            this.logger.compute('', `Confirming SNS subscription/unsubscription message.`);
+            logger.compute('', `Confirming SNS subscription/unsubscription message.`);
 
             return {
                 timestamp: moment().tz('Europe/Rome').format("YYYY.MM.DD HH:mm:ss"),
@@ -126,7 +127,7 @@ export class SNSImpl extends IPubSub {
                 // If the error is a parsing error
                 if (error instanceof SyntaxError) {
 
-                    this.logger.compute('', `SNS message is not a valid JSON: ${message.Message}`);
+                    logger.compute('', `SNS message is not a valid JSON: ${message.Message}`);
 
                     console.log(error)
 
@@ -146,9 +147,9 @@ export class SNSImpl extends IPubSub {
 
 class SNSSubscriptionConfirmationFilter implements APubSubRequestFilter {
 
-    constructor(private logger: Logger) { }
-
     async handle(req: Request): Promise<ProcessingResponse> {
+
+        const logger = Logger.getInstance();
 
         return new Promise<ProcessingResponse>((resolve, reject) => {
 
@@ -157,21 +158,21 @@ class SNSSubscriptionConfirmationFilter implements APubSubRequestFilter {
 
             const subscribeUrl = message.SubscribeURL;
 
-            this.logger.compute('', `Confirming SNS subscription: ${subscribeUrl}`);
+            logger.compute('', `Confirming SNS subscription: ${subscribeUrl}`);
 
             https.get(subscribeUrl, {}, (response) => {
 
                 if (response.statusCode === 200) {
-                    this.logger.compute('', `SNS subscription confirmed successfully.`);
+                    logger.compute('', `SNS subscription confirmed successfully.`);
                     resolve({ status: "processed", responsePayload: "SNS subscription confirmed successfully" });
                 }
                 else {
-                    this.logger.compute('', `Failed to confirm SNS subscription. Status: ${response.statusCode}`);
+                    logger.compute('', `Failed to confirm SNS subscription. Status: ${response.statusCode}`);
                     resolve({ status: "failed", responsePayload: `Error confirming SNS subscription: ${response.statusCode}` });
                 }
 
             }).on('error', (err) => {
-                this.logger.compute('', `Error confirming SNS subscription: ${err.message}`);
+                logger.compute('', `Error confirming SNS subscription: ${err.message}`);
                 resolve({ status: "failed", responsePayload: `Error confirming SNS subscription: ${err.message}` });
             });
 
@@ -182,21 +183,14 @@ class SNSSubscriptionConfirmationFilter implements APubSubRequestFilter {
 
 export class SNSRequestValidator extends APubSubRequestValidator {
 
-    private logger: Logger;
-
-    constructor() {
-
-        super();
-
-        this.logger = new Logger("SNSRequestValidator");
-    }
-
     isRequestRecognized(req: Request): boolean {
+
+        const logger = Logger.getInstance();
 
         // Check if the x-amz-sns-message-type header is present 
         if (req.get('x-amz-sns-message-type')) {
 
-            this.logger.compute('', `Received SNS request with header x-amz-sns-message-type: ${req.get("x-amz-sns-message-type")}`);
+            logger.compute('', `Received SNS request with header x-amz-sns-message-type: ${req.get("x-amz-sns-message-type")}`);
 
             if (req.get('x-amz-sns-message-type') == 'SubscriptionConfirmation' || req.get('x-amz-sns-message-type') == 'UnsubscribeConfirmation' || req.get('x-amz-sns-message-type') == 'Notification') return true;
 
@@ -214,6 +208,8 @@ export class SNSRequestValidator extends APubSubRequestValidator {
 
     async isRequestAuthorized(req: Request): Promise<boolean> {
 
+        const logger = Logger.getInstance();
+
         try {
 
             // Check if the x-amz-sns-message-type header is present 
@@ -227,20 +223,20 @@ export class SNSRequestValidator extends APubSubRequestValidator {
 
             // 1. Verify message has required fields
             if (!message || !message.Type || !message.Signature || !message.SigningCertURL) {
-                this.logger.compute('', 'SNS message missing required fields');
+                logger.compute('', 'SNS message missing required fields');
                 return false;
             }
 
             // 2. Verify the certificate URL is from AWS
             // if (!this.isValidCertUrl(message.SigningCertURL)) {
-            //     this.logger.compute('', 'Invalid SNS certificate URL');
+            //     logger.compute('', 'Invalid SNS certificate URL');
             //     return false;
             // }
 
             // // 3. Download and verify the signing certificate
             // const certificate = await this.downloadCertificate(message.SigningCertURL);
             // if (!certificate) {
-            //     this.logger.compute('', 'Failed to download SNS certificate');
+            //     logger.compute('', 'Failed to download SNS certificate');
             //     return false;
             // }
 
@@ -248,14 +244,14 @@ export class SNSRequestValidator extends APubSubRequestValidator {
             // const stringToSign = this.buildStringToSign(message);
 
             // if (!stringToSign) {
-            //     this.logger.compute('', 'Invalid SNS message type');
+            //     logger.compute('', 'Invalid SNS message type');
             //     return false;
             // }
 
             // // 5. Verify the signature
             // const isValid = this.verifySignature(certificate, stringToSign, message.Signature);
             // if (!isValid) {
-            //     this.logger.compute('', 'SNS signature verification failed');
+            //     logger.compute('', 'SNS signature verification failed');
             //     return false;
             // }
 
@@ -266,7 +262,7 @@ export class SNSRequestValidator extends APubSubRequestValidator {
             //     return false;
             // }
 
-            this.logger.compute('', `SNS message validated successfully. Type: ${message.Type}`);
+            logger.compute('', `SNS message validated successfully. Type: ${message.Type}`);
 
             return true;
 

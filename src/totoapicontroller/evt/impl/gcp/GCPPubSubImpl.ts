@@ -11,7 +11,6 @@ const topics = new Array<TopicWrapper>()
 export class GCPPubSubImpl extends IPubSub {
     expectedAudience: string;
     pubsub: PubSub;
-    logger = new Logger("GCP PubSub");
 
     constructor({ expectedAudience }: { expectedAudience: string }) {
         super();
@@ -25,35 +24,37 @@ export class GCPPubSubImpl extends IPubSub {
     }
 
     getRequestValidator(): APubSubRequestValidator {
-        return new GCPPubSubRequestValidator(this.expectedAudience, this.logger);
+        return new GCPPubSubRequestValidator(this.expectedAudience);
     }
 
     async publishMessage(destination: MessageDestination, message: TotoMessage): Promise<void> {
 
-        this.logger.compute(message.cid, "Publishing the event [ " + message.type + " ] for object with id [ " + message.id + " ]. The following message is to be published: [ " + message.msg + " ]", "info");
+        const logger = Logger.getInstance();
+
+        logger.compute(message.cid, "Publishing the event [ " + message.type + " ] for object with id [ " + message.id + " ]. The following message is to be published: [ " + message.msg + " ]", "info");
 
         let topic = findTopicInCache(destination.topic!);
 
         if (!topic) {
 
-            this.logger.compute(message.cid, `Instantiating PubSub Topic for topic [${destination.topic}]`, "info");
+            logger.compute(message.cid, `Instantiating PubSub Topic for topic [${destination.topic}]`, "info");
 
             topic = new TopicWrapper(destination.topic!, this.pubsub.topic(destination.topic!));
             topics.push(topic);
 
-            this.logger.compute(message.cid, `PubSub Topic [${destination.topic}] instantiated!`, "info");
+            logger.compute(message.cid, `PubSub Topic [${destination.topic}] instantiated!`, "info");
         }
 
         try {
 
             await topic.topic.publishMessage({ data: Buffer.from(message as any) as any });
 
-            this.logger.compute(message.cid, "Successfully published the event [ " + message.type + " ]", "info");
+            logger.compute(message.cid, "Successfully published the event [ " + message.type + " ]", "info");
 
         } catch (e: any) {
 
-            this.logger.compute(message.cid, "Publishing the event [ " + message.type + " ] failed. The following message had to be published: [ " + message.msg + " ]", "error");
-            this.logger.compute(message.cid, e, 'error');
+            logger.compute(message.cid, "Publishing the event [ " + message.type + " ] failed. The following message had to be published: [ " + message.msg + " ]", "error");
+            logger.compute(message.cid, e, 'error');
             console.error(e);
 
         }
@@ -82,7 +83,7 @@ export class GCPPubSubImpl extends IPubSub {
  */
 export class GCPPubSubRequestValidator extends APubSubRequestValidator {
 
-    constructor(private readonly expectedAudience: string, private readonly logger: Logger) {
+    constructor(private readonly expectedAudience: string) {
         super();
     }
 
@@ -109,6 +110,8 @@ export class GCPPubSubRequestValidator extends APubSubRequestValidator {
 
     async isRequestAuthorized(req: Request): Promise<boolean> {
 
+        const logger = Logger.getInstance();
+
         // Extraction of the headers
         const authorizationHeader = req.get('authorization');
 
@@ -116,7 +119,7 @@ export class GCPPubSubRequestValidator extends APubSubRequestValidator {
 
         const expectedAudience = this.expectedAudience;
 
-        const googleAuthCheckResult = await googleAuthCheck("", authorizationHeader, expectedAudience, this.logger, false);
+        const googleAuthCheckResult = await googleAuthCheck("", authorizationHeader, expectedAudience, logger, false);
 
         if (googleAuthCheckResult.email) return true;
 

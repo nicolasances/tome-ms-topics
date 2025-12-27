@@ -1,18 +1,15 @@
 import { Request } from "express";
 import { ControllerConfig } from "../Config";
 import { TopicsStore } from "../store/TopicsStore";
-import { ExecutionContext, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
+import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
 
 
 export class GetTopics extends TotoDelegate {
 
-    async do(req: Request, userContext: UserContext, execContext: ExecutionContext): Promise<any> {
+    async do(req: Request, userContext: UserContext): Promise<any> {
 
-        const body = req.body
-        const logger = execContext.logger;
-        const cid = execContext.cid;
-        const config = execContext.config as ControllerConfig;
-
+        const logger = Logger.getInstance();
+        const config = this.config as ControllerConfig;
 
         // Extract user
         const user = userContext.email;
@@ -32,7 +29,7 @@ export class GetTopics extends TotoDelegate {
 
         } catch (error) {
 
-            logger.compute(cid, `${error}`, "error")
+            logger.compute(this.cid, `${error}`, "error")
 
             if (error instanceof ValidationError || error instanceof TotoRuntimeError) {
                 throw error;

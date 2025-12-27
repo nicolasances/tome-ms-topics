@@ -14,15 +14,15 @@ export class SecretsManager {
 
     private provider: SupportedHyperscalers;
     private hyperscalerConfiguration: GCPConfiguration | AWSConfiguration | AzureConfiguration;
-    private logger: Logger;
 
     constructor(hyperscaler: TotoEnvironment) {
         this.provider = hyperscaler.hyperscaler;
         this.hyperscalerConfiguration = hyperscaler.hyperscalerConfiguration;
-        this.logger = new Logger("SecretsManager");
     }
 
     getSecret(secretName: string): Promise<string> {
+
+        const logger = Logger.getInstance();
 
         try {
             
@@ -31,7 +31,7 @@ export class SecretsManager {
 
         } catch (error) {
             
-            this.logger.compute("", `Error retrieving secret ${secretName} from ${this.provider} Secret Manager: ${error}`, "error");
+            logger.compute("", `Error retrieving secret ${secretName} from ${this.provider} Secret Manager: ${error}`, "error");
 
             throw error;
         }
@@ -46,11 +46,13 @@ export class SecretsManager {
      */
     private getSecretFromAWS = async (secretName: string): Promise<string> => {
 
+        const logger = Logger.getInstance();
+
         const environment = (this.hyperscalerConfiguration as AWSConfiguration).environment;
     
         const fullSecretName = `${environment}/${secretName}`;
     
-        this.logger.compute("", `Retrieving secret ${fullSecretName} from AWS Secrets Manager`);
+        logger.compute("", `Retrieving secret ${fullSecretName} from AWS Secrets Manager`);
     
         const client = new AWSSecretsManager({ region: process.env.AWS_REGION || 'eu-north-1' });
     
@@ -72,9 +74,11 @@ export class SecretsManager {
      */
     private getSecretFromGCP = async (secretName: string): Promise<string> => {
 
+        const logger = Logger.getInstance();
+
         const gcpPID = (this.hyperscalerConfiguration as GCPConfiguration).gcpProjectId;
 
-        this.logger.compute("", `Retrieving secret ${secretName} from GCP Secret Manager in project ${gcpPID}`);
+        logger.compute("", `Retrieving secret ${secretName} from GCP Secret Manager in project ${gcpPID}`);
     
         const client = new SecretManagerServiceClient();
     

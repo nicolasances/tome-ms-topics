@@ -1,16 +1,15 @@
 import { Request } from "express";
 import { ControllerConfig } from "../Config";
 import { TopicsStore } from "../store/TopicsStore";
-import { ExecutionContext, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
+import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
 
 
 export class GetTopic extends TotoDelegate {
 
-    async do(req: Request, userContext: UserContext, execContext: ExecutionContext): Promise<any> {
+    async do(req: Request, userContext: UserContext): Promise<any> {
 
-        const logger = execContext.logger;
-        const cid = execContext.cid;
-        const config = execContext.config as ControllerConfig;
+        const logger = Logger.getInstance();
+        const config = this.config as ControllerConfig;
 
         const topicId = req.params.topicId;
 
@@ -22,14 +21,14 @@ export class GetTopic extends TotoDelegate {
             // Instantiate the DB
             const db = await config.getMongoDb(config.getDBName());
 
-            const topicStore = new TopicsStore(db, config); 
+            const topicStore = new TopicsStore(db, config);
 
             return await topicStore.findTopicById(topicId);
 
 
         } catch (error) {
 
-            logger.compute(cid, `${error}`, "error")
+            logger.compute(this.cid, `${error}`, "error")
 
             if (error instanceof ValidationError || error instanceof TotoRuntimeError) {
                 throw error;

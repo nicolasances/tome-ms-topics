@@ -1,4 +1,3 @@
-import * as jwt from 'jsonwebtoken';
 import { AUTH_PROVIDERS } from '..';
 
 /**

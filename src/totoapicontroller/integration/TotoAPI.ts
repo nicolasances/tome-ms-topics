@@ -1,6 +1,6 @@
 import http from "request";
 import { v4 as uuidv4 } from "uuid";
-import { newTotoServiceToken, RegistryCache, TotoControllerConfig, TotoRuntimeError } from "..";
+import { Logger, newTotoServiceToken, RegistryCache, TotoControllerConfig, TotoRuntimeError } from "..";
 
 export class TotoAPI {
 
@@ -39,7 +39,7 @@ export class TotoAPI {
      */
     private async call<T>(method: string, request: TotoAPIRequest, ResponseClass: TotoAPIResponseConstructor<T>): Promise<T> {
 
-        const logger = this.config.logger!;
+        const logger = Logger.getInstance();
         const endpoint = await RegistryCache.getInstance().getEndpoint(this.apiName);
 
         if (!endpoint || !endpoint.endpointURL) {

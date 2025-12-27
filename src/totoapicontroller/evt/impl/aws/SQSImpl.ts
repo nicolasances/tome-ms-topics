@@ -9,7 +9,6 @@ export class SQSMessageBus extends IQueue {
     private client: SQSClient;
     private queueUrl: string | undefined;
     private isPolling: boolean = false;
-    private logger = new Logger("SQS");
 
     constructor(private readonly queueName: string, private readonly region: string) {
         super(); 
@@ -81,17 +80,19 @@ export class SQSMessageBus extends IQueue {
      */
     async startPolling(): Promise<void> {
 
+        const logger = Logger.getInstance();
+
         if (!this.queueUrl) {
             await this.initialize();
         }
 
         if (this.isPolling) {
-            this.logger.compute("", 'Polling already started');
+            logger.compute("", 'Polling already started');
             return;
         }
 
         this.isPolling = true;
-        this.logger.compute("", `Started polling SQS queue: ${this.queueName}`);
+        logger.compute("", `Started polling SQS queue: ${this.queueName}`);
 
         while (this.isPolling) {
 
@@ -101,7 +102,7 @@ export class SQSMessageBus extends IQueue {
 
                 if (messages.length > 0) {
 
-                    this.logger.compute("", `Received ${messages.length} message(s)`);
+                    logger.compute("", `Received ${messages.length} message(s)`);
 
                     for (const msg of messages) {
 
@@ -117,13 +118,13 @@ export class SQSMessageBus extends IQueue {
                                     ReceiptHandle: msg.ReceiptHandle,
                                 })
                             );
-                            this.logger.compute("", 'Message deleted from queue');
+                            logger.compute("", 'Message deleted from queue');
                         }
                     }
                 }
             } catch (error) {
                 
-                this.logger.compute("", `Error polling SQS: ${error}`);
+                logger.compute("", `Error polling SQS: ${error}`);
 
                 await new Promise(resolve => setTimeout(resolve, 5000));
             }
@@ -131,8 +132,10 @@ export class SQSMessageBus extends IQueue {
     }
 
     stopPolling(): void {
+
+        const logger = Logger.getInstance();
         
-        this.logger.compute("", 'Stopping SQS polling');
+        logger.compute("", 'Stopping SQS polling');
         
         this.isPolling = false;
     }

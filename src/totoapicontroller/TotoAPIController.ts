@@ -6,9 +6,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { Logger } from './logger/TotoLogger'
 import { TotoControllerConfig } from './model/TotoControllerConfig'
-import { LazyValidator, ValidationError, Validator } from './validation/Validator';
+import { ValidationError, Validator } from './validation/Validator';
 import { TotoDelegate } from './model/TotoDelegate';
-import { ExecutionContext } from './model/ExecutionContext';
 import { SmokeDelegate } from './dlg/SmokeDelegate';
 import { TotoRuntimeError } from './model/TotoRuntimeError';
 import { TotoPathOptions } from './model/TotoPathOptions';
@@ -26,6 +25,7 @@ export class TotoControllerOptions {
 export interface TotoControllerProps {
     apiName: string;
     environment: TotoEnvironment;
+    config: TotoControllerConfig;
 }
 
 /**
@@ -39,10 +39,7 @@ export class TotoAPIController {
 
     app: Express;
     apiName: string;
-    logger: Logger;
-    validator: Validator = new LazyValidator();
     props: TotoControllerProps;
-    config: TotoControllerConfig;
     options: TotoControllerOptions;
 
     /**
@@ -56,16 +53,16 @@ export class TotoAPIController {
         this.app = express();
         this.props = props;
         this.apiName = props.apiName;
-        this.logger = new Logger(this.apiName)
-        this.config = config;
         this.options = {
             debugMode: options.debugMode ?? false,
             basePath: options.basePath,
             port: options.port ?? 8080
         };
 
+        const logger = Logger.getInstance();
+
         // Log some configuration properties
-        if (options.debugMode) this.logger.compute("INIT", `[TotoAPIController Debug] - Config Properties: ${JSON.stringify(config.getProps())}`)
+        if (options.debugMode) logger.compute("INIT", `[TotoAPIController Debug] - Config Properties: ${JSON.stringify(this.props.config.getProps())}`)
 
         // Initialize the basic Express functionalities
         this.app.use(function (req: any, res: any, next: any) {
@@ -81,8 +78,11 @@ export class TotoAPIController {
 
         // Add the standard Toto paths
         // Add the basic SMOKE api and /health endpoint. 
-        this.path('GET', '/', new SmokeDelegate(null as any, this.config, this.logger), { noAuth: true, contentType: 'application/json', ignoreBasePath: true });
-        this.path('GET', '/health', new SmokeDelegate(null as any, this.config, this.logger), { noAuth: true, contentType: 'application/json', ignoreBasePath: true });
+        const smokeEndpoint = new SmokeDelegate(null as any, this.props.config);
+        smokeEndpoint.apiName = this.apiName; // Inject apiName
+
+        this.path('GET', '/', smokeEndpoint, { noAuth: true, contentType: 'application/json', ignoreBasePath: true });
+        this.path('GET', '/health', smokeEndpoint, { noAuth: true, contentType: 'application/json', ignoreBasePath: true });
 
         // Bindings
         this.staticContent = this.staticContent.bind(this);
@@ -92,15 +92,13 @@ export class TotoAPIController {
 
     async init() {
 
-        this.validator = new Validator(this.config, this.logger, this.options.debugMode);
-
         // Register this API with Toto API Registry
-        const registrationResponse = await new TotoRegistryAPI(this.config).registerAPI({ apiName: this.apiName, basePath: this.options.basePath?.replace("/", ""), hyperscaler: this.props.environment.hyperscaler });
+        const registrationResponse = await new TotoRegistryAPI(this.props.config).registerAPI({ apiName: this.apiName, basePath: this.options.basePath?.replace("/", ""), hyperscaler: this.props.environment.hyperscaler });
 
-        this.logger.compute("INIT", `API ${this.apiName} successfully registered with Toto API Registry: ${JSON.stringify(registrationResponse)}`, 'info');
+        Logger.getInstance().compute("INIT", `API ${this.apiName} successfully registered with Toto API Registry: ${JSON.stringify(registrationResponse)}`, 'info');
 
         // Download all Toto API Endpoints and cache them 
-        RegistryCache.getInstance(this.config).refresh();
+        RegistryCache.getInstance(this.props.config).refresh();
 
     }
 
@@ -114,7 +112,7 @@ export class TotoAPIController {
         // Make sure that the basePath does not end with "/". If it does remove it. 
         const correctedPath = (this.options.basePath && (!options || !options.ignoreBasePath)) ? this.options.basePath.replace(/\/$/, '').trim() + path : path;
 
-        this.app.use(path, express.static(folder));
+        this.app.use(correctedPath, express.static(folder));
 
     }
 
@@ -131,16 +129,17 @@ export class TotoAPIController {
         // Make sure that the basePath does not end with "/". If it does remove it. 
         const correctedPath = (this.options.basePath && (!options || !options.ignoreBasePath)) ? this.options.basePath.replace(/\/$/, '').trim() + path : path;
 
+        const validator = new Validator(this.props.config, this.options.debugMode || false);
+        const logger = Logger.getInstance();
+
         this.app.route(correctedPath).get((req: Request, res: Response, next) => {
 
-            this.validator.validate(req, options).then((userContext) => {
+            validator.validate(req, options).then((userContext) => {
 
-                this.logger.apiIn(req.headers['x-correlation-id'], 'GET', correctedPath);
-
-                const executionContext = new ExecutionContext(this.logger, this.apiName, this.config, String(req.headers['x-correlation-id']), String(req.headers['x-app-version']))
+                logger.apiIn(req.headers['x-correlation-id'], 'GET', correctedPath);
 
                 // Execute the GET
-                delegate.do(req, userContext, executionContext).then((stream) => {
+                delegate.processRequest(req, userContext).then((stream) => {
 
                     // Add any additional configured headers
                     if (options && options.contentType) res.header('Content-Type', options.contentType);
@@ -157,7 +156,7 @@ export class TotoAPIController {
                     });
                 }, (err) => {
                     // Log
-                    this.logger.compute(req.headers['x-correlation-id'], err, 'error');
+                    logger.compute(req.headers['x-correlation-id'], err, 'error');
                     // If the err is a {code: 400, message: '...'}, then it's a validation error
                     if (err != null && err.code == '400') res.status(400).type('application/json').send(err);
                     // Failure
@@ -178,12 +177,15 @@ export class TotoAPIController {
         // Make sure that the basePath does not end with "/". If it does remove it. 
         const correctedPath = (this.options.basePath && (!options || !options.ignoreBasePath)) ? this.options.basePath.replace(/\/$/, '').trim() + path : path;
 
+        const validator = new Validator(this.props.config, this.options.debugMode || false);
+        const logger = Logger.getInstance();
+
         this.app.route(correctedPath).post(async (req, res, next) => {
 
-            this.logger.apiIn(req.headers['x-correlation-id'], 'POST', correctedPath);
+            logger.apiIn(req.headers['x-correlation-id'], 'POST', correctedPath);
 
             // Validating
-            const userContext = await this.validator.validate(req);
+            const userContext = await validator.validate(req);
 
             let fstream;
             let filename: string;
@@ -198,7 +200,7 @@ export class TotoAPIController {
 
             req.busboy.on('file', (fieldname, file, metadata) => {
 
-                this.logger.compute(req.headers['x-correlation-id'], 'Uploading file ' + metadata.filename, 'info');
+                logger.compute(req.headers['x-correlation-id'], 'Uploading file ' + metadata.filename, 'info');
 
                 // Define the target dir
                 let dir = __dirname + '/app-docs';
@@ -220,20 +222,18 @@ export class TotoAPIController {
 
             req.busboy.on("finish", () => {
 
-                const executionContext = new ExecutionContext(this.logger, this.apiName, this.config, String(req.headers['x-correlation-id']), String(req.headers['x-app-version']))
-
-                delegate.do({
+                delegate.processRequest({
                     query: req.query,
                     params: req.params,
                     headers: req.headers,
                     body: { filepath: filepath, filename: filename, ...additionalData }
-                }, userContext, executionContext).then((data) => {
+                }, userContext).then((data) => {
                     // Success
                     res.status(200).type('application/json').send(data);
 
                 }, (err) => {
                     // Log
-                    this.logger.compute(req.headers['x-correlation-id'], err, 'error');
+                    logger.compute(req.headers['x-correlation-id'], err, 'error');
                     // If the err is a {code: 400, message: '...'}, then it's a validation error
                     if (err != null && err.code == '400') res.status(400).type('application/json').send(err);
                     // Failure
@@ -244,7 +244,7 @@ export class TotoAPIController {
         });
 
         // Log the added path
-        this.logger.compute("INIT", '[' + this.apiName + '] - Successfully added method ' + 'POST' + ' ' + correctedPath);
+        logger.compute("INIT", '[' + this.apiName + '] - Successfully added method ' + 'POST' + ' ' + correctedPath);
     }
 
     /**
@@ -256,11 +256,14 @@ export class TotoAPIController {
      * @param handler The handler that will process the incoming Pub/Sub messages
      * @param options 
      */
-    registerPubSubMessageEndpoint(path: string, handler: (req: Request, execContext: ExecutionContext) => Promise<any>, options?: TotoPathOptions) {
+    registerPubSubMessageEndpoint(path: string, handler: (req: Request) => Promise<any>, options?: TotoPathOptions) {
 
         // If a basepath is defined, prepend it to the path
         // Make sure that the basePath does not end with "/". If it does remove it. 
         const correctedPath = (this.options.basePath && (!options || !options.ignoreBasePath)) ? this.options.basePath.replace(/\/$/, '').trim() + path : path;
+
+        const validator = new Validator(this.props.config, this.options.debugMode || false);
+        const logger = Logger.getInstance();
 
         const handleRequest = async (req: Request, res: Response) => {
 
@@ -269,23 +272,20 @@ export class TotoAPIController {
             try {
 
                 // Log the fact that a call has been received
-                this.logger.compute(cid, `Received event on path ${path}`);
-
-                // Build the context
-                const executionContext = new ExecutionContext(this.logger, this.apiName, this.config, cid)
+                logger.compute(cid, `Received event on path ${path}`);
 
                 // Use the handler
-                const data = await handler(req, executionContext);
+                const data = await handler(req);
 
                 // Log response
-                this.logger.compute(cid, `Event on path ${path} processed with result: ${JSON.stringify(data)}`);
+                logger.compute(cid, `Event on path ${path} processed with result: ${JSON.stringify(data)}`);
 
                 res.status(200).type('application/json').send(data);
 
 
             } catch (error) {
 
-                this.logger.compute(cid, `${error}`, "error")
+                logger.compute(cid, `${error}`, "error")
 
                 if (error instanceof ValidationError || error instanceof TotoRuntimeError) {
                     res.status(error.code).type("application/json").send(error)
@@ -318,6 +318,9 @@ export class TotoAPIController {
         // Make sure that the basePath does not end with "/". If it does remove it. 
         const correctedPath = (this.options.basePath && (!options || !options.ignoreBasePath)) ? this.options.basePath.replace(/\/$/, '').trim() + path : path;
 
+        const validator = new Validator(this.props.config, this.options.debugMode || false);
+        const logger = Logger.getInstance();
+
         const handleRequest = async (req: Request, res: Response) => {
 
             const cid = String(req.headers['x-correlation-id']);
@@ -325,15 +328,13 @@ export class TotoAPIController {
             try {
 
                 // Log the fact that a call has been received
-                this.logger.apiIn(cid, method, correctedPath);
+                logger.apiIn(cid, method, correctedPath);
 
                 // Validating
-                const userContext = await this.validator.validate(req, options);
-
-                const executionContext = new ExecutionContext(this.logger, this.apiName, this.config, cid, String(req.headers['x-app-version']))
+                const userContext = await validator.validate(req, options);
 
                 // Execute the GET
-                const data = await delegate.do(req, userContext, executionContext);
+                const data = await delegate.processRequest(req, userContext);
 
                 let contentType = 'application/json'
                 let dataToReturn = data;
@@ -343,7 +344,7 @@ export class TotoAPIController {
 
             } catch (error) {
 
-                this.logger.compute(cid, `${error}`, "error")
+                logger.compute(cid, `${error}`, "error")
 
                 if (error instanceof ValidationError || error instanceof TotoRuntimeError) {
                     res.status(error.code).type("application/json").send(error)
@@ -362,7 +363,7 @@ export class TotoAPIController {
         else this.app.get(correctedPath, handleRequest);
 
         // Log the added path
-        this.logger.compute("INIT", '[' + this.apiName + '] - Successfully added method ' + method + ' ' + correctedPath);
+        logger.compute("INIT", '[' + this.apiName + '] - Successfully added method ' + method + ' ' + correctedPath);
     }
 
     /**
@@ -370,14 +371,17 @@ export class TotoAPIController {
      */
     listen() {
 
-        if (!this.validator) {
-            console.info("[" + this.apiName + "] - Waiting for the configuration to load...");
+        const validator = new Validator(this.props.config, this.options.debugMode || false);
+        const logger = Logger.getInstance();
+
+        if (!validator) {
+            logger.compute("INIT", "Waiting for the configuration to load...");
             setTimeout(() => { this.listen() }, 300);
             return;
         }
 
         this.app.listen(this.options.port, () => {
-            this.logger.compute("INIT", `[${this.apiName}] - Microservice listening on port ${this.options.port}`, 'info');
+            logger.compute("INIT", `[${this.apiName}] - Microservice listening on port ${this.options.port}`, 'info');
         });
 
     }

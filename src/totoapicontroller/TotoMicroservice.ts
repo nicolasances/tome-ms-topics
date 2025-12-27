@@ -26,6 +26,8 @@ export class TotoMicroservice {
 
         if (TotoMicroservice.instance) return TotoMicroservice.instance;
         if (TotoMicroservice.instancePromise) return TotoMicroservice.instancePromise;
+        
+        Logger.init(config.apiName);
 
         // Instantiate the Microservice custom configuration
         const customConfig = new config.config(
@@ -35,26 +37,19 @@ export class TotoMicroservice {
         TotoMicroservice.instancePromise = customConfig.load().then(() => {
 
             // Create the API controller
-            const apiController = new TotoAPIController(customConfig, { basePath: config.basePath });
-            const logger = new Logger(config.apiName);
-
-            // Determine message bus implementations based on the hyperscaler
-            const awsMessageBus = config.environment.hyperscaler === "aws" ? new SNSImpl({ awsRegion: (config.environment.hyperscalerConfiguration as AWSConfiguration).awsRegion }) : undefined;
-            const gcpMessageBus = config.environment.hyperscaler === "gcp" ? new GCPPubSubImpl({ expectedAudience: customConfig.getExpectedAudience() }) : undefined;
+            const apiController = new TotoAPIController({apiName: config.apiName, config: customConfig, environment: config.environment}, { basePath: config.basePath });
 
             // Create the message bus
             const bus = new TotoMessageBus({
                 controller: apiController,
-                messageBusImplementations: {
-                    gcp: gcpMessageBus,
-                    aws: awsMessageBus
-                }
+                messageBusImplementation: TotoMicroservice.getMessageBusImplementation(config, customConfig),
+                customConfig: customConfig
             });
 
             // Register the message handlers
             if (config.messageHandlers) {
                 for (const handler of config.messageHandlers) {
-                    bus.registerMessageHandler(handler);
+                    bus.registerMessageHandler(new handler(customConfig));
                 }
             }
 
@@ -63,7 +58,7 @@ export class TotoMicroservice {
                 for (const endpoint of config.apiEndpoints) {
 
                     // Create an instance of the delegate
-                    const delegateInstance = new endpoint.delegate(bus, customConfig, logger);
+                    const delegateInstance = new endpoint.delegate(bus, customConfig);
 
                     // Add the endpoint to the controller
                     apiController.path(endpoint.method, endpoint.path, delegateInstance);
@@ -80,6 +75,12 @@ export class TotoMicroservice {
     public async start() {
         this.apiController.listen()
     }
+
+    public static getMessageBusImplementation(config: TotoMicroserviceConfiguration, customConfig: TotoControllerConfig): any {
+        if (config.environment.hyperscaler === "aws") return new SNSImpl({ awsRegion: (config.environment.hyperscalerConfiguration as AWSConfiguration).awsRegion });
+        if (config.environment.hyperscaler === "gcp") return new GCPPubSubImpl({ expectedAudience: customConfig.getExpectedAudience() });
+        return null;
+    }
 }
 
 export interface TotoMicroserviceConfiguration {
@@ -88,13 +89,13 @@ export interface TotoMicroserviceConfiguration {
     environment: TotoEnvironment;
     config: new (secretsManager: SecretsManager) => TotoControllerConfig;
     apiEndpoints?: TotoAPIEndpoint[];
-    messageHandlers?: TotoMessageHandler[];
+    messageHandlers?: (new (config: TotoControllerConfig) => TotoMessageHandler)[];
 }
 
 export interface TotoAPIEndpoint {
     method: 'GET' | 'POST' | 'PUT' | 'DELETE';
     path: string;
-    delegate: new (messageBus: TotoMessageBus, config: TotoControllerConfig, logger: Logger) => TotoDelegate;
+    delegate: new (messageBus: TotoMessageBus, config: TotoControllerConfig) => TotoDelegate;
 }
 
 export type SupportedHyperscalers = "aws" | "gcp" | "azure";

@@ -1,7 +1,7 @@
 import { ControllerConfig } from "../../Config";
 import { TopicsStore } from "../../store/TopicsStore";
 import { TrackingStore } from "../../store/TrackingStore";
-import { ExecutionContext, TotoMessage, TotoRuntimeError, ValidationError } from "../../totoapicontroller";
+import { Logger, TotoMessage, TotoRuntimeError, ValidationError } from "../../totoapicontroller";
 import { ProcessingResponse, TotoMessageHandler } from "../../totoapicontroller/evt/MessageBus";
 
 /**
@@ -12,10 +12,10 @@ export class OnTopicScraped extends TotoMessageHandler {
 
     protected handledMessageType: string = 'topicScraped';
 
-    async onMessage(msg: TotoMessage, execContext: ExecutionContext): Promise<ProcessingResponse> {
+    async onMessage(msg: TotoMessage): Promise<ProcessingResponse> {
 
-        const logger = execContext.logger;
-        const config = execContext.config as ControllerConfig;
+        const logger = Logger.getInstance();
+        const config = this.config as ControllerConfig;
         const cid = msg.cid;
         const data = msg.data as OnTopicScrapedMsgPayload;
 

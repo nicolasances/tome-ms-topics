@@ -5,11 +5,7 @@ import { SupportedHyperscalers } from "../TotoMicroservice";
 
 export class TotoRegistryAPI {
 
-    logger: Logger;
-
-    constructor(private config: TotoControllerConfig) {
-        this.logger = config.logger!;
-    }
+    constructor(protected config: TotoControllerConfig) { }
 
     /**
      * Registers a new API with the Toto API Registry
@@ -17,48 +13,50 @@ export class TotoRegistryAPI {
      * @param request the api to register
      * @returns the registration response
      */
-    async registerAPI(request: RegisterAPIRequest): Promise<RegisterAPIResponse> {
+    async registerAPI(request: RegisterAPIRequest): Promise < RegisterAPIResponse > {
 
-        this.logger.compute("", `Registering API [ ${request.apiName} ] with Toto Registry at [ ${this.config.getTotoRegistryEndpoint()} ].`, "info");
+            const logger = Logger.getInstance();
 
-        return new Promise((success, failure) => {
+            logger.compute("", `Registering API [ ${request.apiName} ] with Toto Registry at [ ${this.config.getTotoRegistryEndpoint()} ].`, "info");
 
-            http({
-                uri: `${this.config.getTotoRegistryEndpoint()}/apis`,
-                method: 'POST',
-                headers: {
-                    'x-correlation-id': uuidv4(),
-                    'Authorization': "Bearer " + newTotoServiceToken(this.config),
-                    'Content-Type': 'application/json'
+            return new Promise((success, failure) => {
+
+                http({
+                    uri: `${this.config.getTotoRegistryEndpoint()}/apis`,
+                    method: 'POST',
+                    headers: {
+                        'x-correlation-id': uuidv4(),
+                        'Authorization': "Bearer " + newTotoServiceToken(this.config),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(request)
                 },
-                body: JSON.stringify(request)
-            }, 
-            (err, resp, body) => {
-                handleResponse<RegisterAPIResponse>(err, resp, body).then(success).catch(failure)
+                    (err, resp, body) => {
+                        handleResponse<RegisterAPIResponse>(err, resp, body).then(success).catch(failure)
+                    });
             });
-        });
-    }
+        }
 
-    async getAPIs(): Promise<GetAPIsResponse> { 
+    async getAPIs(): Promise < GetAPIsResponse > {
 
-        return new Promise((success, failure) => {
+            return new Promise((success, failure) => {
 
-            http({
-                uri: `${this.config.getTotoRegistryEndpoint()}/apis`,
-                method: 'GET',
-                headers: {
-                    'x-correlation-id': uuidv4(),
-                    'Authorization': "Bearer " + newTotoServiceToken(this.config),
-                    'Content-Type': 'application/json'
-                }
-            }, 
-            (err, resp, body) => {
-                handleResponse<GetAPIsResponse>(err, resp, body).then(success).catch(failure)
+                http({
+                    uri: `${this.config.getTotoRegistryEndpoint()}/apis`,
+                    method: 'GET',
+                    headers: {
+                        'x-correlation-id': uuidv4(),
+                        'Authorization': "Bearer " + newTotoServiceToken(this.config),
+                        'Content-Type': 'application/json'
+                    }
+                },
+                    (err, resp, body) => {
+                        handleResponse<GetAPIsResponse>(err, resp, body).then(success).catch(failure)
+                    });
             });
-        });
+        }
+
     }
-    
-}
 
 export interface GetAPIsResponse {
     apis: APIEndpoint[];

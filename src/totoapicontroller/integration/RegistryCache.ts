@@ -28,12 +28,10 @@ export class RegistryCache {
     private lastRefreshTime: number = 0;
     private ttlMilliseconds: number;
     private registryAPI: TotoRegistryAPI;
-    logger: Logger | undefined;
 
     private constructor(config: TotoControllerConfig, options?: RegistryCacheOptions) {
         this.registryAPI = new TotoRegistryAPI(config);
         this.ttlMilliseconds = (options?.ttlMinutes ?? DEFAULT_TTL_MINUTES) * 60 * 1000;
-        this.logger = config.logger;
     }
 
     /**
@@ -104,6 +102,9 @@ export class RegistryCache {
      * This will fetch all API endpoints from the registry and update the cache.
      */
     async refresh(): Promise<void> {
+
+        const logger = Logger.getInstance();
+
         try {
             const response = await this.registryAPI.getAPIs();
 
@@ -118,9 +119,9 @@ export class RegistryCache {
             // Update the last refresh time
             this.lastRefreshTime = Date.now();
 
-            this.logger?.compute("REFRESH", `Registry cache refreshed with ${this.cache.size} API endpoints`);
+            logger?.compute("REFRESH", `Registry cache refreshed with ${this.cache.size} API endpoints`);
         } catch (error) {
-            this.logger?.compute("REFRESH", `Failed to refresh registry cache: ${error}`);
+            logger?.compute("REFRESH", `Failed to refresh registry cache: ${error}`);
             throw error;
         }
     }
@@ -129,17 +130,21 @@ export class RegistryCache {
      * Manually invalidates the cache, forcing the next access to refresh from the registry.
      */
     invalidate(): void {
+
+        const logger = Logger.getInstance();
         this.lastRefreshTime = 0;
-        this.logger?.compute("", 'Registry cache invalidated');
+        logger?.compute("", 'Registry cache invalidated');
     }
 
     /**
      * Clears the cache completely.
      */
     clear(): void {
+
+        const logger = Logger.getInstance();
         this.cache.clear();
         this.lastRefreshTime = 0;
-        this.logger?.compute("", 'Registry cache cleared');
+        logger?.compute("", 'Registry cache cleared');
     }
 
     /**

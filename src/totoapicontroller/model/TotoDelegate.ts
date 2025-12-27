@@ -1,23 +1,37 @@
 import { Request } from "express";
-import { ExecutionContext } from "./ExecutionContext";
 import { UserContext } from "./UserContext";
 import { TotoMessageBus } from "../evt/MessageBus";
 import { TotoControllerConfig } from "./TotoControllerConfig";
-import { Logger } from "../logger/TotoLogger";
 
 export abstract class TotoDelegate {
 
-    constructor(protected messageBus: TotoMessageBus, protected config: TotoControllerConfig, protected logger: Logger) {}
+    protected cid?: string = undefined;
 
-    abstract do(req: Request | FakeRequest, userContext: UserContext | undefined, execContext: ExecutionContext): Promise<any>
+    constructor(protected messageBus: TotoMessageBus, protected config: TotoControllerConfig) { }
+
+    /**
+     * Processes the incoming request and returns a Promise with the result. 
+     * 
+     * This method wraps the abstract do() method to provide common pre- and post-processing logic if needed.
+     * 
+     * @param req the HTTP request
+     * @param userContext the User Context, if available
+     */
+    public async processRequest(req: Request | FakeRequest, userContext?: UserContext): Promise<any> {
+
+        // Extract CID
+        this.cid = req.headers['x-correlation-id'] || req.headers['X-Correlation-Id'];
+    }
+
+    protected abstract do(req: Request | FakeRequest, userContext?: UserContext): Promise<any>
 
 }
 
 export interface FakeRequest {
 
-    query: any, 
-    params: any, 
-    headers: any, 
+    query: any,
+    params: any,
+    headers: any,
     body: any
 
 }

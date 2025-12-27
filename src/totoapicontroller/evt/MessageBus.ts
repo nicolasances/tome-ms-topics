@@ -1,15 +1,12 @@
 import { Request } from "express";
 import { TotoMessage } from "./TotoMessage";
-import { ExecutionContext, Logger, TotoAPIController, TotoRuntimeError } from "..";
+import { TotoAPIController, TotoControllerConfig, TotoRuntimeError } from "..";
 import { v4 as uuidv4 } from 'uuid';
 
 export interface TotoMessageBusConfiguration {
     controller: TotoAPIController;
-    messageBusImplementations: {
-        aws?: IMessageBus;
-        gcp?: IMessageBus;
-        azure?: IMessageBus;
-    }
+    customConfig: TotoControllerConfig;
+    messageBusImplementation: IMessageBus;
 }
 
 /**
@@ -42,28 +39,25 @@ export class TotoMessageBus {
     protected messageHandlerRegistrations: MessageHandlerRegistration[] = [];
 
     private apiController: TotoAPIController;
-    private hyperscaler: "aws" | "gcp" | "azure";
-    private registeredBusImplementations: Map<"aws" | "gcp" | "azure", IMessageBus> = new Map();
+    private messageBus: IMessageBus;
+    private config: TotoMessageBusConfiguration;
 
     constructor(config: TotoMessageBusConfiguration) {
 
-        // Register the provided bus implementations
-        if (config.messageBusImplementations.aws) this.registeredBusImplementations.set("aws", config.messageBusImplementations.aws);
-        if (config.messageBusImplementations.gcp) this.registeredBusImplementations.set("gcp", config.messageBusImplementations.gcp);
-        if (config.messageBusImplementations.azure) this.registeredBusImplementations.set("azure", config.messageBusImplementations.azure);
+        this.config = config;
+
+        // Register the provided bus implementation
+        this.messageBus = config.messageBusImplementation;
 
         // Store the API Controller reference
         this.apiController = config.controller;
 
-        this.hyperscaler = config.controller.config.hyperscaler == 'local' ? config.controller.config.options?.defaultHyperscaler ?? 'gcp' : config.controller.config.hyperscaler;
-
         // IMPORTANT! Register the message bus's handler (filter) in API Controller and Pull Queues and PubSubs
         // 1. For PULL queue implementations, register the MessageBus PULL callback so that messages pulled by the queue are routed to the MessageBus first
-        this.registeredBusImplementations.forEach((busImpl, hyperscaler) => {
-            if (busImpl instanceof IQueue) {
-                (busImpl as IQueue).setMessageHandler(this.onPullMessageReceived.bind(this));
-            }
-        });
+        if (this.messageBus instanceof IQueue) {
+            (this.messageBus as IQueue).setMessageHandler(this.onPullMessageReceived.bind(this));
+        }
+
         // 2. For PUSH Pub/Sub implementations, register the MessageBus PUSH callback in the API Controller so that all messages received on the endpoint are routed to the MessageBus
         this.apiController.registerPubSubMessageEndpoint("/events", this.onPushMessageReceived.bind(this));
     }
@@ -84,24 +78,6 @@ export class TotoMessageBus {
     }
 
     /**
-     * Returns the message bus implementation for the given hyperscaler.
-     * 
-     * @param hyperscaler the hyperscaler where this code is running (hosted)
-     * 
-     * @returns the right bus for the hyperscaler
-     */
-    private getBus(): IMessageBus {
-
-        const bus = this.registeredBusImplementations.get(this.hyperscaler);
-
-        if (!bus) {
-            throw new TotoRuntimeError(500, `No message bus registered for hyperscaler ${this.hyperscaler}`);
-        }
-
-        return bus;
-    }
-
-    /**
      * Publishes a message to the message bus.
      * 
      * @param destination the message destination
@@ -109,7 +85,7 @@ export class TotoMessageBus {
      * @returns 
      */
     public publishMessage(destination: MessageDestination, message: TotoMessage): Promise<void> {
-        return this.getBus().publishMessage(destination, message);
+        return this.messageBus.publishMessage(destination, message);
     }
 
     /**
@@ -120,13 +96,10 @@ export class TotoMessageBus {
      */
     public async onPullMessageReceived(envelope: any): Promise<ProcessingResponse> {
 
-        const messageBus = this.getBus();
-
-        if (!messageBus) return { status: "ignored", responsePayload: "No message bus implementation found" };
-        if (!(messageBus instanceof IQueue)) return { status: "ignored", responsePayload: "Message bus is not a Queue implementation" };
+        if (!(this.messageBus instanceof IQueue)) return { status: "ignored", responsePayload: "Message bus is not a Queue implementation" };
 
         // Decode the message
-        const message: TotoMessage = messageBus.convert(envelope);
+        const message: TotoMessage = this.messageBus.convert(envelope);
 
         // Get the handler
         const handler = this.findHandler("pull", message.type);
@@ -134,7 +107,7 @@ export class TotoMessageBus {
         if (!handler) return { status: "ignored", responsePayload: `No handler found for message type ${message.type}` };
 
         // Call the handler
-        return handler.onMessage(message, new ExecutionContext(this.apiController.logger, this.apiController.apiName, this.apiController.config, uuidv4()));
+        return handler.processMessage(message);
     }
 
     /**
@@ -144,26 +117,24 @@ export class TotoMessageBus {
      * 
      * @param req 
      */
-    public async onPushMessageReceived(req: Request, execContext: ExecutionContext): Promise<ProcessingResponse> {
+    public async onPushMessageReceived(req: Request): Promise<ProcessingResponse> {
 
-        const messageBus = this.getBus();
+        if (!this.messageBus) return { status: "ignored", responsePayload: "No message bus implementation found" };
 
-        if (!messageBus) return { status: "ignored", responsePayload: "No message bus implementation found" };
-
-        const isAuthorized = await messageBus.getRequestValidator().isRequestAuthorized(req);
+        const isAuthorized = await this.messageBus.getRequestValidator().isRequestAuthorized(req);
 
         if (!isAuthorized) throw new TotoRuntimeError(401, "Unauthorized PubSub request: " + JSON.stringify(req));
 
         // For PubSub implementations, check if there's a filter to handle this request
         // If the message is not destined to the handler (e.g. message that needs to be intercepted by a filter), then let the filter handle it
-        if (messageBus instanceof IPubSub) {
-            const filter = (messageBus as IPubSub).filter(req);
+        if (this.messageBus instanceof IPubSub) {
+            const filter = (this.messageBus as IPubSub).filter(req);
 
             if (filter) return await filter.handle(req);
         }
 
         // Decode the message
-        const message: TotoMessage = messageBus.convert(req);
+        const message: TotoMessage = this.messageBus.convert(req);
 
         // Get the handler
         const handler = this.findHandler("push", message.type);
@@ -171,7 +142,7 @@ export class TotoMessageBus {
         if (!handler) return { status: "ignored", responsePayload: `No handler found for message type ${message.type}` };
 
         // Call the handler
-        return handler.onMessage(message, execContext);
+        return handler.processMessage(message);
     }
 
     /**
@@ -291,6 +262,22 @@ export abstract class IQueue extends IMessageBus {
  */
 export abstract class TotoMessageHandler {
 
+    cid?: string;
+
+    constructor(protected config: TotoControllerConfig) { }
+
+    /**
+     * Wrapper of the onMessage() method that provides specific pre-processing if needed.
+     * @param msg the message to process
+     * @returns 
+     */
+    public async processMessage(msg: TotoMessage): Promise<ProcessingResponse> {
+        
+        this.cid = msg.cid || uuidv4();
+        
+        return this.onMessage(msg);
+    }
+
     /**
      * The type of event handled by this handler.
      * 
@@ -309,9 +296,8 @@ export abstract class TotoMessageHandler {
      * Processes an incoming message.
      * 
      * @param msg the message to process
-     * @param execContext the execution context for the message
      */
-    abstract onMessage(msg: TotoMessage, execContext: ExecutionContext): Promise<ProcessingResponse>;
+    protected abstract onMessage(msg: TotoMessage): Promise<ProcessingResponse>;
 
 }
 

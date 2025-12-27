@@ -14,7 +14,7 @@ export function newTotoServiceToken(config: TotoControllerConfig) {
 
     let exp = moment().tz("Europe/Rome").add(3, "hours").unix();
 
-    let token = jwt.sign({ user: config.getAPIName(), authProvider: "toto", exp: exp }, config.getSigningKey());
+    let token = jwt.sign({ user: "toto-service", authProvider: "toto", exp: exp }, config.getSigningKey());
 
     return token;
 }

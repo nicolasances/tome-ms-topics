@@ -5,17 +5,17 @@ import { FlashcardsAPI } from "../../api/FlashcardsAPI";
 import { RefreshTrackingRecord } from "../../model/RefreshTracking";
 import { TrackingStore } from "../../store/TrackingStore";
 import { isTopicGenerationComplete } from "../../util/RefreshTrackingUtil";
-import { ExecutionContext, newTotoServiceToken, TotoMessage, TotoRuntimeError, ValidationError } from "../../totoapicontroller";
+import { Logger, newTotoServiceToken, TotoMessage, TotoRuntimeError, ValidationError } from "../../totoapicontroller";
 import { ProcessingResponse, TotoMessageHandler } from "../../totoapicontroller/evt/MessageBus";
 
 export class OnFlashcardsCreated extends TotoMessageHandler {
 
     protected handledMessageType: string = 'flashcardsCreated';
 
-    async onMessage(msg: TotoMessage, execContext: ExecutionContext): Promise<ProcessingResponse> {
+    async onMessage(msg: TotoMessage): Promise<ProcessingResponse> {
 
-        const logger = execContext.logger;
-        const config = execContext.config as ControllerConfig;
+        const logger = Logger.getInstance();
+        const config = this.config as ControllerConfig;
         const cid = msg.cid;
 
         const eventPayload = msg.data as FlashcardsCreatedEvent;
@@ -35,8 +35,8 @@ export class OnFlashcardsCreated extends TotoMessageHandler {
             // 1. Retrieve the number of flashcards that the topic has so far
             const jwtToken = newTotoServiceToken(config);
 
-            const { flashcards } = await new FlashcardsAPI(execContext, jwtToken).getFlashcards(eventPayload.topicId);
-            const flashcardTypes = await new FlashcardsAPI(execContext, jwtToken).getFlashcardTypes();
+            const { flashcards } = await new FlashcardsAPI(this.cid!, jwtToken).getFlashcards(eventPayload.topicId);
+            const flashcardTypes = await new FlashcardsAPI(this.cid!, jwtToken).getFlashcardTypes();
 
             const count = flashcards.length;
 
@@ -67,7 +67,7 @@ export class OnFlashcardsCreated extends TotoMessageHandler {
             // If the generation is complete, get the latest generation 
             let generation = "-";
             if (isFlashcardComplete)
-                generation = await new FlashcardsAPI(execContext, jwtToken).getLatestFlashcardsGeneration().then(res => res.latestGeneration);
+                generation = await new FlashcardsAPI(this.cid!, jwtToken).getLatestFlashcardsGeneration().then(res => res.latestGeneration);
 
             // Update the topic, recording the last practice date
             const result = await topicStore.updateTopicGeneration(eventPayload.topicId, generation, count, isFlashcardComplete);

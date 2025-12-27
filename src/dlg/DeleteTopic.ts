@@ -1,16 +1,15 @@
 import { Request } from "express";
 import { ControllerConfig } from "../Config";
-import { ExecutionContext, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
+import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
 import { TopicsStore } from "../store/TopicsStore";
 
 
 export class DeleteTopic extends TotoDelegate {
 
-    async do(req: Request, userContext: UserContext, execContext: ExecutionContext): Promise<any> {
+    async do(req: Request, userContext: UserContext): Promise<any> {
 
-        const logger = execContext.logger;
-        const cid = execContext.cid;
-        const config = execContext.config as ControllerConfig;
+        const logger = Logger.getInstance();
+        const config = this.config as ControllerConfig;
 
 
         // Extract user
@@ -21,7 +20,7 @@ export class DeleteTopic extends TotoDelegate {
             // Instantiate the DB
             const db = await config.getMongoDb(config.getDBName());
 
-            const topicStore = new TopicsStore(db, config); 
+            const topicStore = new TopicsStore(db, config);
 
             // Read the topic
             const topic = await topicStore.findTopicById(req.params.id);
@@ -33,12 +32,12 @@ export class DeleteTopic extends TotoDelegate {
             // Publish the event
             // if (deletedCount > 0) await new EventPublisher(execContext, "tometopics").publishEvent(req.params.id, EVENTS.topicDeleted, `Topic with id ${req.params.id} deleted by user ${user}`, topic);
 
-            return {deletedCount: deletedCount}
+            return { deletedCount: deletedCount }
 
 
         } catch (error) {
 
-            logger.compute(cid, `${error}`, "error")
+            logger.compute(this.cid, `${error}`, "error")
 
             if (error instanceof ValidationError || error instanceof TotoRuntimeError) {
                 throw error;

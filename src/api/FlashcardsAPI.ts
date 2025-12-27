@@ -1,6 +1,5 @@
 
 import http from "request";
-import { ExecutionContext } from "../totoapicontroller";
 
 export class FlashcardsAPI {
 
@@ -8,9 +7,9 @@ export class FlashcardsAPI {
     cid: string | undefined;
     authHeader: string;
 
-    constructor(execContext: ExecutionContext, jwtToken: string) {
+    constructor(cid: string, jwtToken: string) {
+        this.cid = cid;
         this.endpoint = String(process.env['TOME_FLASHCARDS_API_ENDPOINT']);
-        this.cid = execContext.cid;
         this.authHeader = `Bearer ${jwtToken}`;
     }
 

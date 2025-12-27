@@ -25,10 +25,10 @@ TotoMicroservice.init({
         { method: 'POST', path: '/topics/:topicId/refresh', delegate: RefreshTopic }
     ],
     messageHandlers: [
-        new OnTopicScraped(),
-        new OnPracticeFinished(),
-        new OnFlashcardsCreated()
+        OnTopicScraped,
+        OnPracticeFinished,
+        OnFlashcardsCreated
     ]
-}).then(ms => {
-    ms.start();
+}).then(microservice => {
+    microservice.start();
 })

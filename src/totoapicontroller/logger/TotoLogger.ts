@@ -1,14 +1,31 @@
 
 import moment from 'moment-timezone'
+import { TotoRuntimeError } from '../model/TotoRuntimeError';
 
 export class Logger {
 
-  apiName: string
+  private static instance: Logger;
 
-  constructor(apiName: string) {
+  private constructor(private apiName: string) { }
 
-    this.apiName = apiName;
+  /**
+   * Initializes the singleton instance of the Logger
+   */
+  static init(apiName: string): Logger {
+    if (!Logger.instance) {
+      Logger.instance = new Logger(apiName);
+    }
+    return Logger.instance;
+  }
 
+  /**
+   * Gets the singleton instance of the Logger
+   */
+  static getInstance(): Logger {
+    if (!Logger.instance) {
+      throw new TotoRuntimeError(500, "Logger instance not initialized. Call Logger.init(apiName) first.");
+    }
+    return Logger.instance;
   }
 
   /**

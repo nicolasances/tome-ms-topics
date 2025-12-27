@@ -3,17 +3,16 @@ import { ControllerConfig } from "../Config";
 import { TopicsStore } from "../store/TopicsStore";
 import { Topic } from "../model/Topic";
 import moment from "moment-timezone";
-import { ExecutionContext, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
+import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
 
 
 export class PostTopic extends TotoDelegate {
 
-    async do(req: Request, userContext: UserContext, execContext: ExecutionContext): Promise<any> {
+    async do(req: Request, userContext: UserContext): Promise<any> {
 
         const body = req.body
-        const logger = execContext.logger;
-        const cid = execContext.cid;
-        const config = execContext.config as ControllerConfig;
+        const logger = Logger.getInstance();
+        const config = this.config as ControllerConfig;
 
         // Validate mandatory fields
         if (!body.name) throw new ValidationError(400, "No name provided"); 
@@ -47,7 +46,7 @@ export class PostTopic extends TotoDelegate {
 
         } catch (error) {
 
-            logger.compute(cid, `${error}`, "error")
+            logger.compute(this.cid, `${error}`, "error")
 
             if (error instanceof ValidationError || error instanceof TotoRuntimeError) {
                 throw error;

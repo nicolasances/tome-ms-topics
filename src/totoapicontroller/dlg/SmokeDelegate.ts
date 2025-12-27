@@ -1,14 +1,15 @@
 import { Request } from "express";
-import { ExecutionContext } from "../model/ExecutionContext";
 import { TotoDelegate } from "../model/TotoDelegate";
 import { UserContext } from "../model/UserContext";
 
 export class SmokeDelegate extends TotoDelegate {
 
-    async do(req: Request, userContext: UserContext | undefined, execContext: ExecutionContext): Promise<SmokeResponse> {
+    apiName?: string;   // Injected
+
+    async do(req: Request, userContext: UserContext | undefined): Promise<SmokeResponse> {
 
         return {
-            api: execContext.apiName,
+            api: this.apiName,
             status: "running"
         }
 
@@ -18,6 +19,6 @@ export class SmokeDelegate extends TotoDelegate {
 }
 
 export interface SmokeResponse {
-    api: string,
+    api?: string,
     status: string
 }
