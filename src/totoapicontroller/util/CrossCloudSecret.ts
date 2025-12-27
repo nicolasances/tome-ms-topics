@@ -31,7 +31,7 @@ export class SecretsManager {
 
         } catch (error) {
             
-            logger.compute("", `Error retrieving secret ${secretName} from ${this.provider} Secret Manager: ${error}`, "error");
+            logger.compute("INIT", `Error retrieving secret ${secretName} from ${this.provider} Secret Manager: ${error}`, "error");
 
             throw error;
         }
@@ -52,7 +52,7 @@ export class SecretsManager {
     
         const fullSecretName = `${environment}/${secretName}`;
     
-        logger.compute("", `Retrieving secret ${fullSecretName} from AWS Secrets Manager`);
+        logger.compute("INIT", `Retrieving secret ${fullSecretName} from AWS Secrets Manager`);
     
         const client = new AWSSecretsManager({ region: process.env.AWS_REGION || 'eu-north-1' });
     
@@ -78,7 +78,7 @@ export class SecretsManager {
 
         const gcpPID = (this.hyperscalerConfiguration as GCPConfiguration).gcpProjectId;
 
-        logger.compute("", `Retrieving secret ${secretName} from GCP Secret Manager in project ${gcpPID}`);
+        logger.compute("INIT", `Retrieving secret ${secretName} from GCP Secret Manager in project ${gcpPID}`);
     
         const client = new SecretManagerServiceClient();
     

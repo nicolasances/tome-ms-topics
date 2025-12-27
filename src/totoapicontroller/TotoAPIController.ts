@@ -81,6 +81,7 @@ export class TotoAPIController {
         const smokeEndpoint = new SmokeDelegate(null as any, this.props.config);
         smokeEndpoint.apiName = this.apiName; // Inject apiName
 
+        this.path('GET', '/', smokeEndpoint, { noAuth: true, contentType: 'application/json' });
         this.path('GET', '/', smokeEndpoint, { noAuth: true, contentType: 'application/json', ignoreBasePath: true });
         this.path('GET', '/health', smokeEndpoint, { noAuth: true, contentType: 'application/json', ignoreBasePath: true });
 
@@ -262,7 +263,6 @@ export class TotoAPIController {
         // Make sure that the basePath does not end with "/". If it does remove it. 
         const correctedPath = (this.options.basePath && (!options || !options.ignoreBasePath)) ? this.options.basePath.replace(/\/$/, '').trim() + path : path;
 
-        const validator = new Validator(this.props.config, this.options.debugMode || false);
         const logger = Logger.getInstance();
 
         const handleRequest = async (req: Request, res: Response) => {
@@ -301,7 +301,7 @@ export class TotoAPIController {
         this.app.post(correctedPath, parseTextAsJson, handleRequest);
 
         // Log the added path
-        console.log('[' + this.apiName + '] - Successfully added event handler POST ' + correctedPath);
+        logger.compute("INIT", "Successfully added event handler POST " + correctedPath);
     }
 
     /**

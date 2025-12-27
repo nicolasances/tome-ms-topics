@@ -21,6 +21,8 @@ export abstract class TotoDelegate {
 
         // Extract CID
         this.cid = req.headers['x-correlation-id'] || req.headers['X-Correlation-Id'];
+
+        return this.do(req, userContext);
     }
 
     protected abstract do(req: Request | FakeRequest, userContext?: UserContext): Promise<any>
