@@ -3,22 +3,41 @@ import { PostTopic } from "./dlg/PostTopic";
 import { GetTopics } from "./dlg/GetTopics";
 import { DeleteTopic } from "./dlg/DeleteTopic";
 import { GetTopic } from "./dlg/GetTopic";
-import { OnPracticeEvent } from "./evt/OnPracticeEvent";
-import { OnTopicEvent } from "./evt/OnTopicEvent";
 import { RefreshTopic } from "./dlg/RefreshTopic";
-import { TotoAPIController } from "toto-api-controller";
+import { OnFlashcardsCreated } from "./evt/handlers/OnFlashcardsCreated";
+import { OnPracticeFinished } from "./evt/handlers/OnPracticeFinished";
+import { OnTopicScraped } from "./evt/handlers/OnTopicScraped";
+import { TotoMicroservice } from "./totoapicontroller/core/TotoMicroservice";
+import { SupportedHyperscalers } from "./totoapicontroller";
 
-const api = new TotoAPIController(new ControllerConfig({apiName: "tome-ms-topics"}), {basePath: '/tometopics'});
-
-api.path('POST', '/topics', new PostTopic());
-api.path('GET', '/topics', new GetTopics());
-api.path('DELETE', '/topics/:id', new DeleteTopic());
-api.path('GET', '/topics/:topicId', new GetTopic());
-api.path('POST', '/topics/:topicId/refresh', new RefreshTopic()); 
-
-api.registerPubSubEventHandler('topic', new OnTopicEvent());
-api.registerPubSubEventHandler('practice', new OnPracticeEvent());
-
-api.init().then(() => {
-    api.listen()
-});
+TotoMicroservice.init({
+    serviceName: "tome-ms-topics",
+    basePath: '/tometopics',
+    environment: {
+        hyperscaler: process.env.HYPERSCALER as SupportedHyperscalers || "aws",
+        hyperscalerConfiguration: { awsRegion: process.env.AWS_REGION || "eu-north-1", environment: process.env.ENVIRONMENT as "dev" | "test" | "prod" || "dev" }
+    },
+    customConfiguration: ControllerConfig,
+    apiConfiguration: {
+        apiEndpoints: [
+            { method: 'POST', path: '/topics', delegate: PostTopic },
+            { method: 'GET', path: '/topics', delegate: GetTopics },
+            { method: 'DELETE', path: '/topics/:id', delegate: DeleteTopic },
+            { method: 'GET', path: '/topics/:topicId', delegate: GetTopic },
+            { method: 'POST', path: '/topics/:topicId/refresh', delegate: RefreshTopic }
+        ],
+        apiOptions: { noCorrelationId: true }
+    }, 
+    messageBusConfiguration: {
+        topics: [
+            { logicalName: "tometopics", secret: "tome_topics_topic_name" }
+        ],
+        messageHandlers: [
+            OnTopicScraped,
+            OnPracticeFinished,
+            OnFlashcardsCreated
+        ]
+    }
+}).then(microservice => {
+    microservice.start();
+})

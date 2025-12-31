@@ -1,41 +1,32 @@
 import { Request } from "express";
 import { ControllerConfig } from "../Config";
-import { TotoDelegate } from "toto-api-controller/dist/model/TotoDelegate";
-import { UserContext } from "toto-api-controller/dist/model/UserContext";
-import { ExecutionContext } from "toto-api-controller/dist/model/ExecutionContext";
-import { ValidationError } from "toto-api-controller/dist/validation/Validator";
-import { TotoRuntimeError } from "toto-api-controller/dist/model/TotoRuntimeError";
 import { TopicsStore } from "../store/TopicsStore";
 import { Topic } from "../model/Topic";
 import moment from "moment-timezone";
-import { EventPublisher, EVENTS } from "../evt/EventPublisher";
+import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
+import { EVENTS } from "../evt/Events";
 
 
-export class PostTopic implements TotoDelegate {
+export class PostTopic extends TotoDelegate {
 
-    async do(req: Request, userContext: UserContext, execContext: ExecutionContext): Promise<any> {
+    async do(req: Request, userContext: UserContext): Promise<any> {
 
         const body = req.body
-        const logger = execContext.logger;
-        const cid = execContext.cid;
-        const config = execContext.config as ControllerConfig;
+        const logger = Logger.getInstance();
+        const config = this.config as ControllerConfig;
 
         // Validate mandatory fields
-        if (!body.name) throw new ValidationError(400, "No name provided"); 
-        if (!body.blogURL) throw new ValidationError(400, "No Blog URL provided"); 
+        if (!body.name) throw new ValidationError(400, "No name provided");
+        if (!body.blogURL) throw new ValidationError(400, "No Blog URL provided");
 
         // Extract user
         const user = userContext.email;
 
-        let client;
-
         try {
 
-            // Instantiate the DB
-            client = await config.getMongoClient();
-            const db = client.db(config.getDBName());
+            const db = await config.getMongoDb(config.getDBName());
 
-            const topicStore = new TopicsStore(db, config); 
+            const topicStore = new TopicsStore(db, config);
 
             // Check that the topic does not already exist
             const preexistingTopic = await topicStore.findTopicByName(body.name, user);
@@ -48,15 +39,23 @@ export class PostTopic implements TotoDelegate {
             const id = await topicStore.saveTopic(topic);
 
             // Publish the event
-            await new EventPublisher(execContext, "tometopics").publishEvent(id, EVENTS.topicCreated, `Topic ${body.name} created by user ${user}`, topic);
+            // await new EventPublisher(execContext, "tometopics").publishEvent(id, EVENTS.topicCreated, `Topic ${body.name} created by user ${user}`, topic);
+            await this.messageBus.publishMessage({ topic: "tometopics" }, {
+                cid: this.cid!,
+                id: id,
+                type: EVENTS.topicCreated,
+                msg: `Topic ${id} created by user ${user}`,
+                timestamp: new Date().toISOString(),
+                data: topic
+            })
 
             // Return something
-            return {id: id}
+            return { id: id }
 
 
         } catch (error) {
 
-            logger.compute(cid, `${error}`, "error")
+            logger.compute(this.cid, `${error}`, "error")
 
             if (error instanceof ValidationError || error instanceof TotoRuntimeError) {
                 throw error;
@@ -66,9 +65,6 @@ export class PostTopic implements TotoDelegate {
                 throw error;
             }
 
-        }
-        finally {
-            if (client) client.close();
         }
 
     }

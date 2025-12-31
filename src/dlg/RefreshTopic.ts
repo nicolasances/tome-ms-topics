@@ -1,35 +1,25 @@
 import { Request } from "express";
 import { ControllerConfig } from "../Config";
-import { TotoDelegate } from "toto-api-controller/dist/model/TotoDelegate";
-import { UserContext } from "toto-api-controller/dist/model/UserContext";
-import { ExecutionContext } from "toto-api-controller/dist/model/ExecutionContext";
-import { ValidationError } from "toto-api-controller/dist/validation/Validator";
-import { TotoRuntimeError } from "toto-api-controller/dist/model/TotoRuntimeError";
 import { TopicsStore } from "../store/TopicsStore";
-import { EventPublisher, EVENTS } from "../evt/EventPublisher";
+import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoapicontroller";
+import { EVENTS } from "../evt/Events";
 
 
-export class RefreshTopic implements TotoDelegate {
+export class RefreshTopic extends TotoDelegate {
 
-    async do(req: Request, userContext: UserContext, execContext: ExecutionContext): Promise<any> {
+    async do(req: Request, userContext: UserContext): Promise<any> {
 
-        const body = req.body
-        const logger = execContext.logger;
-        const cid = execContext.cid;
-        const config = execContext.config as ControllerConfig;
+        const logger = Logger.getInstance();
+        const config = this.config as ControllerConfig;
 
         const topicId = req.params.topicId;
 
         // Extract user
         const user = userContext.email;
 
-        let client;
-
         try {
 
-            // Instantiate the DB
-            client = await config.getMongoClient();
-            const db = client.db(config.getDBName());
+            const db = await config.getMongoDb(config.getDBName());
 
             const topicStore = new TopicsStore(db, config);
 
@@ -42,7 +32,14 @@ export class RefreshTopic implements TotoDelegate {
             await topicStore.updateTopicMetadata(topicId, { flashcardsGenerationComplete: false });
 
             // Publish the event
-            await new EventPublisher(execContext, "tometopics").publishEvent(topicId, EVENTS.topicRefreshed, `Topic ${topicId} refreshed by user ${user}`, preexistingTopic);
+            await this.messageBus.publishMessage({ topic: "tometopics" }, {
+                cid: this.cid!,
+                id: topicId,
+                type: EVENTS.topicRefreshed,
+                msg: `Topic ${topicId} refreshed by user ${user}`,
+                timestamp: new Date().toISOString(),
+                data: preexistingTopic
+            })
 
             // Return something
             return { refreshed: true }
@@ -50,7 +47,7 @@ export class RefreshTopic implements TotoDelegate {
 
         } catch (error) {
 
-            logger.compute(cid, `${error}`, "error")
+            logger.compute(this.cid, `${error}`, "error")
 
             if (error instanceof ValidationError || error instanceof TotoRuntimeError) {
                 throw error;
@@ -60,9 +57,6 @@ export class RefreshTopic implements TotoDelegate {
                 throw error;
             }
 
-        }
-        finally {
-            if (client) client.close();
         }
 
     }

@@ -1,24 +1,17 @@
-import { ExecutionContext } from "toto-api-controller/dist/model/ExecutionContext";
-import { TotoRuntimeError } from "toto-api-controller/dist/model/TotoRuntimeError";
 import { ControllerConfig } from "../../Config";
-import { ValidationError } from "toto-api-controller/dist/validation/Validator";
 import { Practice } from "../../model/Practice";
 import { TopicsStore } from "../../store/TopicsStore";
-import { TotoMessage } from "toto-api-controller";
+import { Logger, TotoMessage, TotoRuntimeError, ValidationError } from "../../totoapicontroller";
+import { ProcessingResponse, TotoMessageHandler } from "../../totoapicontroller/evt/TotoMessageHandler";
 
-export class OnPracticeFinished {
+export class OnPracticeFinished extends TotoMessageHandler {
 
-    execContext: ExecutionContext;
-    config: ControllerConfig;
+    protected handledMessageType: string = 'practiceFinished';
 
-    constructor(execContext: ExecutionContext) {
-        this.execContext = execContext;
-        this.config = execContext.config as ControllerConfig;
-    }
+    async onMessage(msg: TotoMessage): Promise<ProcessingResponse> {
 
-    async do(msg: TotoMessage) {
-
-        const logger = this.execContext.logger;
+        const logger = Logger.getInstance();
+        const config = this.config as ControllerConfig;
         const cid = msg.cid;
 
         // This handler expects a Practice in the payload of the event
@@ -27,19 +20,16 @@ export class OnPracticeFinished {
         logger.compute(cid, `Practice finished: [${JSON.stringify(practice)}]`)
         logger.compute(cid, `Updating topic ${practice.topicId}`)
 
-        let client;
-
         try {
 
-            client = await this.config.getMongoClient();
-            const db = client.db(this.config.getDBName());
+            const db = await config.getMongoDb(config.getDBName());
 
             // Update the topic, recording the last practice date
-            const result = await new TopicsStore(db, this.config).updateTopicLastPractice(practice.topicId, practice);
+            const result = await new TopicsStore(db, config).updateTopicLastPractice(practice.topicId, practice);
         
             logger.compute(cid, `Topic ${practice.topicId} updated. Modified count: ${result}`)
 
-            return { processed: true }
+            return { status: 'processed', responsePayload: 'Practice finished event processed' };
 
         } catch (error) {
 
@@ -54,12 +44,6 @@ export class OnPracticeFinished {
             }
 
         }
-        finally {
-            if (client) client.close();
-        }
-
-
-        return { consumed: true }
 
     }
 }
