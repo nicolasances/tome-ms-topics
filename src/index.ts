@@ -7,8 +7,7 @@ import { RefreshTopic } from "./dlg/RefreshTopic";
 import { OnFlashcardsCreated } from "./evt/handlers/OnFlashcardsCreated";
 import { OnPracticeFinished } from "./evt/handlers/OnPracticeFinished";
 import { OnTopicScraped } from "./evt/handlers/OnTopicScraped";
-import { TotoMicroservice } from "./totoapicontroller/core/TotoMicroservice";
-import { SupportedHyperscalers } from "./totoapicontroller";
+import { SupportedHyperscalers, TotoMicroservice } from "totoms";
 
 TotoMicroservice.init({
     serviceName: "tome-ms-topics",
