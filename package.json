@@ -4,7 +4,7 @@
   "description": "Template for Toto NodeJS Microservices",
   "main": "index.js",
   "scripts": {
-    "start:dev": "npx nodemon",
+    "dev": "npx nodemon",
     "build": "tsc",
     "start": "node build/index.js"
   },
@@ -25,7 +25,7 @@
     "mongodb": "^6.2.0",
     "path": "^0.12.7",
     "request": "^2.88.2",
-    "totoms": "^1.0.1",
+    "totoms": "^1.0.2",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
