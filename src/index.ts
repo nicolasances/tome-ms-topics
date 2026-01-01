@@ -7,15 +7,14 @@ import { RefreshTopic } from "./dlg/RefreshTopic";
 import { OnFlashcardsCreated } from "./evt/handlers/OnFlashcardsCreated";
 import { OnPracticeFinished } from "./evt/handlers/OnPracticeFinished";
 import { OnTopicScraped } from "./evt/handlers/OnTopicScraped";
-import { TotoMicroservice } from "./totoapicontroller/core/TotoMicroservice";
-import { SupportedHyperscalers } from "./totoapicontroller";
+import { SupportedHyperscalers, TotoMicroservice, getHyperscalerConfiguration } from "totoms";
 
 TotoMicroservice.init({
     serviceName: "tome-ms-topics",
     basePath: '/tometopics',
     environment: {
         hyperscaler: process.env.HYPERSCALER as SupportedHyperscalers || "aws",
-        hyperscalerConfiguration: { awsRegion: process.env.AWS_REGION || "eu-north-1", environment: process.env.ENVIRONMENT as "dev" | "test" | "prod" || "dev" }
+        hyperscalerConfiguration: getHyperscalerConfiguration()
     },
     customConfiguration: ControllerConfig,
     apiConfiguration: {

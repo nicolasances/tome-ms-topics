@@ -1,7 +1,5 @@
-import { Db, ObjectId } from "mongodb";
-import { Topic } from "../model/Topic";
+import { Db } from "mongodb";
 import { ControllerConfig } from "../Config";
-import { Practice } from "../model/Practice";
 import { RefreshTrackingRecord } from "../model/RefreshTracking";
 
 export class TrackingStore {
