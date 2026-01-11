@@ -14,6 +14,7 @@ export class Topic {
     flashcardsGenerationComplete?: boolean; // Whether the flashcard generation is complete
     numSections?: number; // Number of sections in the topic
     sections?: string[]; // Section codes in the topic
+    icon?: string; // Icon URL
 
     constructor(name: string, blogURL: string, createdOn: string, user: string, lastPracticed?: string, generation?: string, flashcardsCount?: number, numSections?: number, flashcardsGenerationComplete?: boolean, topicCode?: string, sections?: string[]) {
         this.topicCode = topicCode;
@@ -33,6 +34,7 @@ export class Topic {
         
         let topic = new Topic(data.name, data.blogURL, data.createdOn, data.user, data.lastPracticed, data.generation, data.flashcardsCount, data.numSections, data.isFlashcardGenerationComplete, data.topicCode, data.sections);
         topic.id = data._id; 
+        topic.icon = data.icon;
 
         return topic;
     }
@@ -50,6 +52,7 @@ export class Topic {
             numSections: this.numSections,
             isFlashcardGenerationComplete: this.flashcardsGenerationComplete,
             sections: this.sections,
+            icon: this.icon
         };
     }
 
