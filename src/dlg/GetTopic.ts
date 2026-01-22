@@ -3,7 +3,6 @@ import { ControllerConfig } from "../Config";
 import { TopicsStore } from "../store/TopicsStore";
 import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "totoms";
 
-
 export class GetTopic extends TotoDelegate {
 
     async do(req: Request, userContext: UserContext): Promise<any> {

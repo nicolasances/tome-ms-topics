@@ -1,0 +1,356 @@
+openapi: 3.0.3
+info:
+  title: Tome Topics API
+  description: API for managing learning topics in the Tome application
+  version: 1.0.0
+  contact:
+    name: nicolasances
+
+security:
+  - bearerAuth: []
+
+paths:
+  /topics:
+    get:
+      summary: Get all topics for a user
+      description: Retrieves all topics belonging to the authenticated user
+      operationId: getTopics
+      tags:
+        - Topics
+      responses:
+        '200':
+          description: Successfully retrieved topics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  topics:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Topic'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      summary: Create a new topic
+      description: Creates a new learning topic for the authenticated user
+      operationId: createTopic
+      tags:
+        - Topics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - blogURL
+              properties:
+                name:
+                  type: string
+                  description: Name of the topic
+                  example: "Introduction to Machine Learning"
+                blogURL:
+                  type: string
+                  format: uri
+                  description: URL to the blog post or article for this topic
+                  example: "https://blog.example.com/ml-intro"
+      responses:
+        '200':
+          description: Topic created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: ID of the created topic
+        '400':
+          description: Bad request - missing required fields or topic already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /topics/{topicId}:
+    get:
+      summary: Get a specific topic
+      description: Retrieves details of a specific topic by ID
+      operationId: getTopic
+      tags:
+        - Topics
+      parameters:
+        - name: topicId
+          in: path
+          required: true
+          description: ID of the topic to retrieve
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully retrieved topic
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Topic'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Topic not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      summary: Update topic metadata
+      description: Updates metadata for a specific topic (currently supports icon updates)
+      operationId: updateTopic
+      tags:
+        - Topics
+      parameters:
+        - name: topicId
+          in: path
+          required: true
+          description: ID of the topic to update
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - icon
+              properties:
+                icon:
+                  type: string
+                  format: uri
+                  description: URL of the icon for this topic
+                  example: "https://example.com/icons/ml.png"
+      responses:
+        '200':
+          description: Topic updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+                    description: Update result from database
+        '400':
+          description: Bad request - missing required fields
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Delete a topic
+      description: Deletes a specific topic by ID
+      operationId: deleteTopic
+      tags:
+        - Topics
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the topic to delete
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Topic deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  deletedCount:
+                    type: integer
+                    description: Number of topics deleted
+                    example: 1
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Topic not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /topics/{topicId}/refresh:
+    post:
+      summary: Refresh a topic
+      description: Triggers a refresh of the topic's content and flashcards
+      operationId: refreshTopic
+      tags:
+        - Topics
+      parameters:
+        - name: topicId
+          in: path
+          required: true
+          description: ID of the topic to refresh
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Topic refresh initiated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  refreshed:
+                    type: boolean
+                    example: true
+        '400':
+          description: Bad request - topic not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from authentication service
+
+  schemas:
+    Topic:
+      type: object
+      required:
+        - name
+        - blogURL
+        - createdOn
+        - user
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the topic
+          example: "507f1f77bcf86cd799439011"
+        topicCode:
+          type: string
+          nullable: true
+          description: Code identifier for the topic
+          example: "ml-intro-001"
+        name:
+          type: string
+          description: Name of the topic
+          example: "Introduction to Machine Learning"
+        blogURL:
+          type: string
+          format: uri
+          description: URL to the source blog post or article
+          example: "https://blog.example.com/ml-intro"
+        createdOn:
+          type: string
+          pattern: '^[0-9]{8}$'
+          description: Creation date in YYYYMMDD format
+          example: "20260122"
+        user:
+          type: string
+          format: email
+          description: Email of the user who created the topic
+          example: "user@example.com"
+        lastPracticed:
+          type: string
+          nullable: true
+          pattern: '^[0-9]{8}$'
+          description: Last practice date in YYYYMMDD format
+          example: "20260122"
+        generation:
+          type: string
+          nullable: true
+          description: Generation identifier
+        flashcardsCount:
+          type: integer
+          nullable: true
+          description: Number of flashcards generated for this topic
+          example: 15
+        flashcardsGenerationComplete:
+          type: boolean
+          nullable: true
+          description: Whether flashcard generation is complete
+          example: true
+        numSections:
+          type: integer
+          nullable: true
+          description: Number of sections in the topic
+          example: 5
+        sections:
+          type: array
+          nullable: true
+          items:
+            type: string
+          description: Section codes in the topic
+          example: ["section-1", "section-2"]
+        icon:
+          type: string
+          nullable: true
+          format: uri
+          description: URL of the icon for this topic
+          example: "https://example.com/icons/ml.png"
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          description: Error code
+          example: 400
+        message:
+          type: string
+          description: Error message
+          example: "No name provided"
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - invalid or missing authentication token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 401
+            message: "Unauthorized"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 500
+            message: "Internal server error"
+
+tags:
+  - name: Topics
+    description: Operations for managing learning topics
