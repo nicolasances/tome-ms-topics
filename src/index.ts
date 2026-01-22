@@ -39,6 +39,6 @@ TotoMicroservice.init({
             OnFlashcardsCreated
         ]
     }
-}).then(microservice => {
+}).then((microservice: TotoMicroservice) => {
     microservice.start();
 })
