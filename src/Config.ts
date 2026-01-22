@@ -1,5 +1,4 @@
 import { TotoControllerConfig, APIOptions } from "totoms"
-
 const dbName = 'tometopics';
 const collections = {
     topics: 'topics',
