@@ -7,7 +7,7 @@ import { RefreshTopic } from "./dlg/RefreshTopic";
 import { OnFlashcardsCreated } from "./evt/handlers/OnFlashcardsCreated";
 import { OnPracticeFinished } from "./evt/handlers/OnPracticeFinished";
 import { OnTopicScraped } from "./evt/handlers/OnTopicScraped";
-import { SupportedHyperscalers, TotoMicroservice, getHyperscalerConfiguration } from "./totoms/index";
+import { SupportedHyperscalers, TotoMicroservice, getHyperscalerConfiguration } from "totoms";
 import { PutTopic } from "./dlg/PutTopic";
 
 TotoMicroservice.init({
