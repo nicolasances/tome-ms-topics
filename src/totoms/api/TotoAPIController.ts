@@ -3,6 +3,8 @@ import busboy from 'connect-busboy'
 import fs from 'fs-extra';
 import express, { Express, Request, Response } from 'express'
 import { v4 as uuidv4 } from 'uuid';
+import swaggerUi from 'swagger-ui-express';
+import yaml from 'js-yaml';
 
 import { Logger } from '../logger/TotoLogger'
 import { TotoControllerConfig } from '../model/TotoControllerConfig'
@@ -15,11 +17,13 @@ import path from 'path';
 import { TotoRegistryAPI } from '../integration/TotoRegistryAPI';
 import { RegistryCache } from '../integration/RegistryCache';
 import { TotoEnvironment } from '..';
+import { OpenAPISpecification } from '../model/APIConfiguration';
 
 export class TotoControllerOptions {
     debugMode?: boolean = false
     basePath?: string = undefined   // Use to prepend a base path to all API paths, e.g. '/api/v1' or '/expenses/v1'
     port?: number                   // Use to define the port on which the Express app will listen. Default is 8080
+    openAPISpecification?: OpenAPISpecification = undefined
 }
 
 export interface TotoControllerProps {
@@ -84,6 +88,14 @@ export class TotoAPIController {
         this.path('GET', '/', smokeEndpoint, { noAuth: true, contentType: 'application/json' });
         this.path('GET', '/', smokeEndpoint, { noAuth: true, contentType: 'application/json', ignoreBasePath: true });
         this.path('GET', '/health', smokeEndpoint, { noAuth: true, contentType: 'application/json', ignoreBasePath: true });
+
+        // Create an OpenAPI docs endpoint if the spec is available
+        if (options?.openAPISpecification?.localSpecsFilePath) {
+            
+            const swaggerDocument = yaml.load( fs.readFileSync(options.openAPISpecification.localSpecsFilePath, 'utf8') ) as swaggerUi.JsonObject;
+
+            this.app.use('/apidocs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+        }
 
         // Bindings
         this.staticContent = this.staticContent.bind(this);

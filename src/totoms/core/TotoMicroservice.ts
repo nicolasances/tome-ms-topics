@@ -45,7 +45,7 @@ export class TotoMicroservice {
         TotoMicroservice.instancePromise = customConfig.load().then(() => {
 
             // Create the API controller
-            const apiController = new TotoAPIController({ apiName: config.serviceName, config: customConfig, environment: config.environment }, { basePath: config.basePath });
+            const apiController = new TotoAPIController({ apiName: config.serviceName, config: customConfig, environment: config.environment }, { basePath: config.basePath, openAPISpecification: config.apiConfiguration.openAPISpecification });
 
             // Create the message bus
             const bus = new TotoMessageBus({
