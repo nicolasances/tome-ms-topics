@@ -1,4 +1,4 @@
-import { TotoControllerConfig, APIOptions } from "totoms";
+import { TotoControllerConfig, APIOptions } from "./totoms/index";
 
 const dbName = 'tometopics';
 const collections = {

@@ -3,7 +3,7 @@ import { ControllerConfig } from "../Config";
 import { TopicsStore } from "../store/TopicsStore";
 import { Topic } from "../model/Topic";
 import moment from "moment-timezone";
-import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "totoms";
+import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoms/index";
 import { EVENTS } from "../evt/Events";
 
 

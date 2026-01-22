@@ -7,7 +7,7 @@ import { RefreshTopic } from "./dlg/RefreshTopic";
 import { OnFlashcardsCreated } from "./evt/handlers/OnFlashcardsCreated";
 import { OnPracticeFinished } from "./evt/handlers/OnPracticeFinished";
 import { OnTopicScraped } from "./evt/handlers/OnTopicScraped";
-import { SupportedHyperscalers, TotoMicroservice, getHyperscalerConfiguration } from "totoms";
+import { SupportedHyperscalers, TotoMicroservice, getHyperscalerConfiguration } from "./totoms/index";
 import { PutTopic } from "./dlg/PutTopic";
 
 TotoMicroservice.init({
@@ -27,7 +27,8 @@ TotoMicroservice.init({
             { method: 'PUT', path: '/topics/:topicId', delegate: PutTopic },
             { method: 'POST', path: '/topics/:topicId/refresh', delegate: RefreshTopic }
         ],
-        apiOptions: { noCorrelationId: true }
+        apiOptions: { noCorrelationId: true }, 
+        openAPISpecification: { localSpecsFilePath: './openapi.yaml' }
     }, 
     messageBusConfiguration: {
         topics: [

@@ -1,6 +1,6 @@
 import { Request } from "express";
 import { ControllerConfig } from "../Config";
-import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "totoms";
+import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoms/index";
 import { TopicsStore } from "../store/TopicsStore";
 import { EVENTS } from "../evt/Events";
 
