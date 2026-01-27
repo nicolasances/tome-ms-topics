@@ -84,7 +84,7 @@ export class TopicsStore {
         if (flashcardsGenerationComplete !== null) update.$set.isFlashcardGenerationComplete = flashcardsGenerationComplete;
         if (sections !== null) update.$set.sections = sections;
         if (topicCode !== null) update.$set.topicCode = topicCode;
-        if (icon !== null) update.$set.icon = icon;
+        if (icon != null) update.$set.icon = icon;
 
         const result = await this.db.collection(this.topicsCollection).updateOne({ _id: new ObjectId(topicId) }, update);
 
