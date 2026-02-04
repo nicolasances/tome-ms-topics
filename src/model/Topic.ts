@@ -57,3 +57,10 @@ export class Topic {
     }
 
 }
+
+export interface GeoAreaMetadata {
+    mainArea: GeoArea;
+    allAreas: GeoArea[];
+}
+
+export type GeoArea = "Europe" | "North America" | "South America" | "Africa" | "Middle East" | "Russia" | "Asia" | "Oceania" | "Polar";

@@ -1,7 +1,8 @@
 import { Db, ObjectId } from "mongodb";
-import { Topic } from "../model/Topic";
+import { GeoArea, GeoAreaMetadata, Topic } from "../model/Topic";
 import { ControllerConfig } from "../Config";
 import { Practice } from "../model/Practice";
+import { ValidationError } from "totoms";
 
 export class TopicsStore {
 
@@ -76,15 +77,16 @@ export class TopicsStore {
      * @param topicId the topic id
      * @returns 
      */
-    async updateTopicMetadata(topicId: string, { topicCode, sections, numSections, flashcardsGenerationComplete, icon }: { topicCode?: string, sections?: string[], numSections?: number, flashcardsGenerationComplete?: boolean, icon?: string }): Promise<number> {
+    async updateTopicMetadata(topicId: string, metadata: TopicMetadata): Promise<number> {
 
         const update = { $set: {} } as any;
 
-        if (numSections != null) update.$set.numSections = numSections;
-        if (flashcardsGenerationComplete !== null) update.$set.isFlashcardGenerationComplete = flashcardsGenerationComplete;
-        if (sections !== null) update.$set.sections = sections;
-        if (topicCode !== null) update.$set.topicCode = topicCode;
-        if (icon != null) update.$set.icon = icon;
+        if (metadata.numSections != null) update.$set.numSections = metadata.numSections;
+        if (metadata.flashcardsGenerationComplete !== null) update.$set.isFlashcardGenerationComplete = metadata.flashcardsGenerationComplete;
+        if (metadata.sections !== null) update.$set.sections = metadata.sections;
+        if (metadata.topicCode !== null) update.$set.topicCode = metadata.topicCode;
+        if (metadata.icon != null) update.$set.icon = metadata.icon;
+        if (metadata.geoArea != null) update.$set.geoArea = metadata.geoArea;
 
         const result = await this.db.collection(this.topicsCollection).updateOne({ _id: new ObjectId(topicId) }, update);
 
@@ -119,4 +121,42 @@ export class TopicsStore {
         return result.insertedId.toString();
     }
 
+}
+
+export class TopicMetadata {
+    topicCode?: string;
+    sections?: string;
+    numSections?: number;
+    flashcardsGenerationComplete?: boolean;
+    icon?: string;
+    geoArea?: GeoAreaMetadata;
+
+    constructor(metadata: TopicMetadata) {
+        this.topicCode = metadata.topicCode;
+        this.sections = metadata.sections;
+        this.numSections = metadata.numSections;
+        this.flashcardsGenerationComplete = metadata.flashcardsGenerationComplete;
+        this.icon = metadata.icon;
+        this.geoArea = metadata.geoArea;
+    }
+
+    static fromHTTPBody(body: any): TopicMetadata {
+
+        // Validate
+        // If the geoArea is present, validate its structure
+        if (body.geoArea) {
+            if (typeof body.geoArea !== "object" || !body.geoArea.mainArea || !Array.isArray(body.geoArea.allAreas)) {
+                throw new ValidationError(400, "Invalid geoArea format in TopicMetadata");
+            }
+        }
+
+        return new TopicMetadata({
+            topicCode: body.topicCode,
+            sections: body.sections,
+            numSections: body.numSections,
+            flashcardsGenerationComplete: body.flashcardsGenerationComplete,
+            icon: body.icon,
+            geoArea: body.geoArea
+        });
+    }
 }
