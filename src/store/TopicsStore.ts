@@ -126,7 +126,7 @@ export class TopicsStore {
 
 export class TopicMetadata {
     topicCode?: string;
-    sections?: string;
+    sections?: string[];
     numSections?: number;
     flashcardsGenerationComplete?: boolean;
     icon?: string;
