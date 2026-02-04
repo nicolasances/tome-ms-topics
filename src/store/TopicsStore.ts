@@ -1,5 +1,5 @@
 import { Db, ObjectId } from "mongodb";
-import { GeoArea, GeoAreaMetadata, Topic } from "../model/Topic";
+import { GeoArea, GeoAreaMetadata, TimePeriodMetadata, Topic } from "../model/Topic";
 import { ControllerConfig } from "../Config";
 import { Practice } from "../model/Practice";
 import { ValidationError } from "totoms";
@@ -87,6 +87,7 @@ export class TopicsStore {
         if (metadata.topicCode !== null) update.$set.topicCode = metadata.topicCode;
         if (metadata.icon != null) update.$set.icon = metadata.icon;
         if (metadata.geoArea != null) update.$set.geoArea = metadata.geoArea;
+        if (metadata.timePeriod != null) update.$set.timePeriod = metadata.timePeriod;
 
         const result = await this.db.collection(this.topicsCollection).updateOne({ _id: new ObjectId(topicId) }, update);
 
@@ -130,6 +131,7 @@ export class TopicMetadata {
     flashcardsGenerationComplete?: boolean;
     icon?: string;
     geoArea?: GeoAreaMetadata;
+    timePeriod?: TimePeriodMetadata;
 
     constructor(metadata: TopicMetadata) {
         this.topicCode = metadata.topicCode;
@@ -138,6 +140,7 @@ export class TopicMetadata {
         this.flashcardsGenerationComplete = metadata.flashcardsGenerationComplete;
         this.icon = metadata.icon;
         this.geoArea = metadata.geoArea;
+        this.timePeriod = metadata.timePeriod;
     }
 
     static fromHTTPBody(body: any): TopicMetadata {
@@ -150,13 +153,21 @@ export class TopicMetadata {
             }
         }
 
+        // Validate the timePeriod if present
+        if (body.timePeriod) {
+            if (typeof body.timePeriod !== "object" || typeof body.timePeriod.startYear !== "number" || typeof body.timePeriod.endYear !== "number") {
+                throw new ValidationError(400, "Invalid timePeriod format in TopicMetadata");
+            }
+        }
+
         return new TopicMetadata({
             topicCode: body.topicCode,
             sections: body.sections,
             numSections: body.numSections,
             flashcardsGenerationComplete: body.flashcardsGenerationComplete,
             icon: body.icon,
-            geoArea: body.geoArea
+            geoArea: body.geoArea, 
+            timePeriod: body.timePeriod
         });
     }
 }

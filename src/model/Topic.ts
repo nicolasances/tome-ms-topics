@@ -64,3 +64,8 @@ export interface GeoAreaMetadata {
 }
 
 export type GeoArea = "Europe" | "North America" | "South America" | "Africa" | "Middle East" | "Russia" | "Asia" | "Oceania" | "Polar";
+
+export interface TimePeriodMetadata {
+    startYear: number;
+    endYear: number;
+}
