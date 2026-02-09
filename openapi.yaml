@@ -56,7 +56,6 @@ paths:
                   example: "Introduction to Machine Learning"
                 blogURL:
                   type: string
-                  format: uri
                   description: URL to the blog post or article for this topic
                   example: "https://blog.example.com/ml-intro"
       responses:
@@ -137,8 +136,7 @@ paths:
               properties:
                 icon:
                   type: string
-                  format: uri
-                  description: URL of the icon for this topic
+                  description: URL or path of the icon for this topic
                   example: "https://example.com/icons/ml.png"
       responses:
         '200':
@@ -266,7 +264,6 @@ components:
           example: "Introduction to Machine Learning"
         blogURL:
           type: string
-          format: uri
           description: URL to the source blog post or article
           example: "https://blog.example.com/ml-intro"
         createdOn:
@@ -314,8 +311,7 @@ components:
         icon:
           type: string
           nullable: true
-          format: uri
-          description: URL of the icon for this topic
+          description: URL or path of the icon for this topic
           example: "https://example.com/icons/ml.png"
 
     Error:
