@@ -1,4 +1,4 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Tome Topics API
   description: API for managing learning topics in the Tome application
@@ -9,7 +9,7 @@ info:
 servers:
   - url: /tometopics
     description: Base path for Tome Topics API
-    
+
 security:
   - bearerAuth: []
 
@@ -273,7 +273,7 @@ components:
           description: Unique identifier for the topic
           example: "507f1f77bcf86cd799439011"
         topicCode:
-          type: string
+          type: ["string", "null"]
           description: Code identifier for the topic
           example: "ml-intro-001"
         name:
@@ -293,38 +293,42 @@ components:
           description: Email of the user who created the topic
           example: "user@example.com"
         lastPracticed:
-          type: string
+          type: ["string", "null"]
           description: Last practice date in YYYYMMDD format
           example: "20260122"
         generation:
-          type: string
+          type: ["string", "null"]
           description: Generation identifier
         flashcardsCount:
-          type: integer
+          type: ["integer", "null"]
           description: Number of flashcards generated for this topic
           example: 15
         flashcardsGenerationComplete:
-          type: boolean
+          type: ["boolean", "null"]
           description: Whether flashcard generation is complete
           example: true
         numSections:
-          type: integer
+          type: ["integer", "null"]
           description: Number of sections in the topic
           example: 5
         sections:
-          type: array
+          type: ["array", "null"]
           items:
             type: string
           description: Section codes in the topic
           example: ["section-1", "section-2"]
         icon:
-          type: string
+          type: ["string", "null"]
           description: URL or path of the icon for this topic
           example: "https://example.com/icons/ml.png"
         geoArea:
-          $ref: '#/components/schemas/GeoAreaMetadata'
+          anyOf:
+            - $ref: '#/components/schemas/GeoAreaMetadata'
+            - type: "null"
         timePeriod:
-          $ref: '#/components/schemas/TimePeriodMetadata'
+          anyOf:
+            - $ref: '#/components/schemas/TimePeriodMetadata'
+            - type: "null"
 
     GeoAreaMetadata:
       type: object
