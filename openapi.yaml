@@ -6,6 +6,10 @@ info:
   contact:
     name: nicolasances
 
+servers:
+  - url: /tometopics
+    description: Base path for Tome Topics API
+    
 security:
   - bearerAuth: []
 
