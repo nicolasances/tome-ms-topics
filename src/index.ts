@@ -13,6 +13,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import z from "zod";
 import express from "express";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { GreetingDelegate } from "./dlg/GreetingDlg";
 
 
 TotoMicroservice.init({
@@ -52,15 +53,7 @@ TotoMicroservice.init({
             name: "Tome Topics MCP Server",
             port: 4100,
             tools: [
-                {
-                    name: "greetTool",
-                    title: "Greet user by name",
-                    description: "Greets a user by their name with a friendly hello message",
-                    inputSchema: z.object({ name: z.string().describe("Name of the user to greet") }),
-                    delegate: async (input) => {
-                        return { content: [{ type: "text", text: `Hello, ${input.name}! You're using MCP!` }] };
-                    }
-                }
+                GreetingDelegate
             ]
         }
     }

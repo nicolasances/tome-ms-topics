@@ -2,9 +2,9 @@
 import express from "express";
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import z from "zod";
 import { Logger } from "..";
-import { MCPServerConfiguration, ToolConfiguration } from "../model/MCPConfiguration";
+import { MCPServerConfiguration } from "../model/MCPConfiguration";
+import { TotoMCPDelegate } from "./TotoMCPDelegate";
 
 export class MCPServer {
 
@@ -25,7 +25,12 @@ export class MCPServer {
         });
 
         // Register tools 
-        if (this.config.tools) this.registerTools(this.config.tools);
+        if (this.config.tools) {
+
+            const tools = this.config.tools.map(ToolClass => new ToolClass(undefined as any, undefined as any)); // Instantiate tools (messageBus and config can be passed if needed)
+
+            this.registerTools(tools);
+        }
 
         // Register the MCP route
         this.mcpApp.post('/mcp', express.json(), async (req, res) => {
@@ -74,16 +79,18 @@ export class MCPServer {
     /**
      * Registers tools in the configuration
      */
-    private registerTools(tools: ToolConfiguration[]) {
+    private registerTools(tools: TotoMCPDelegate[]) {
 
         tools.forEach(tool => {
 
-            this.server.registerTool(tool.name, {
-                title: tool.title,
-                description: tool.description,
-                inputSchema: tool.inputSchema,
+            const definition = tool.getToolDefinition();
+
+            this.server.registerTool(definition.name, {
+                title: definition.title,
+                description: definition.description,
+                inputSchema: definition.inputSchema,
             }, async (input) => {
-                return await tool.delegate(input);
+                return await tool.processToolRequest(input) as any;
             });
 
         });
