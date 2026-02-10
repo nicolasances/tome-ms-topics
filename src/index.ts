@@ -47,67 +47,23 @@ TotoMicroservice.init({
     //     ]
     // },
     mcpConfiguration: {
-        enableMCP: true, 
+        enableMCP: true,
         serverConfiguration: {
             name: "Tome Topics MCP Server",
-            port: 4100
+            port: 4100,
+            tools: [
+                {
+                    name: "greetTool",
+                    title: "Greet user by name",
+                    description: "Greets a user by their name with a friendly hello message",
+                    inputSchema: z.object({ name: z.string().describe("Name of the user to greet") }),
+                    delegate: async (input) => {
+                        return { content: [{ type: "text", text: `Hello, ${input.name}! You're using MCP!` }] };
+                    }
+                }
+            ]
         }
     }
 }).then((microservice: TotoMicroservice) => {
     microservice.start();
 })
-
-// // MCP Server Setup - Stateless mode (each request gets fresh server/transport)
-// const mcpApp = express();
-
-// mcpApp.post('/mcp', express.json(), async (req, res) => {
-//     try {
-//         // Create fresh server and transport for each request (stateless)
-//         const server = new McpServer({
-//             name: "Greet Server",
-//             version: "1.0.0",
-//         });
-
-//         server.registerTool("greetTool", {
-//             title: "Greet user by name",
-//             description: "Greets a user by their name with a friendly hello message",
-//             inputSchema: z.object({
-//                 name: z.string().describe("Name of the user to greet")
-//             }),
-//         }, async (input) => {
-//             return { content: [{ type: "text", text: `Hello, ${input.name}!` }] };
-//         });
-
-//         // Stateless transport - no session management
-//         const transport = new StreamableHTTPServerTransport({
-//             sessionIdGenerator: undefined, // Stateless mode
-//         });
-
-//         // Connect and handle request
-//         await server.connect(transport);
-//         await transport.handleRequest(req, res, req.body);
-
-//         // Clean up after request completes
-//         res.on('close', () => {
-//             transport.close();
-//             server.close();
-//         });
-//     } catch (error) {
-//         console.error('[MCP Server] Error handling request:', error);
-//         if (!res.headersSent) {
-//             res.status(500).json({
-//                 jsonrpc: "2.0",
-//                 error: {
-//                     code: -32603,
-//                     message: "Internal error"
-//                 },
-//                 id: null
-//             });
-//         }
-//     }
-// });
-
-// const PORT = 4100;
-// mcpApp.listen(PORT, () => {
-//     console.log(`MCP HTTP server running on port ${PORT}`);
-// });

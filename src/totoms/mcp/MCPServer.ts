@@ -4,7 +4,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import z from "zod";
 import { Logger } from "..";
-import { MCPServerConfiguration } from "../model/MCPConfiguration";
+import { MCPServerConfiguration, ToolConfiguration } from "../model/MCPConfiguration";
 
 export class MCPServer {
 
@@ -24,18 +24,8 @@ export class MCPServer {
             version: "1.0.0",
         });
 
-        this.server.registerTool("greetTool", {
-            title: "Greet user by name",
-            description: "Greets a user by their name with a friendly hello message",
-            inputSchema: z.object({
-                name: z.string().describe("Name of the user to greet")
-            }),
-        }, async (input) => {
-            return { content: [{ type: "text", text: `Hello, ${input.name}!` }] };
-        });
-
-        // Register tools ONCE
-        // this.registerTools();
+        // Register tools 
+        if (this.config.tools) this.registerTools(this.config.tools);
 
         // Register the MCP route
         this.mcpApp.post('/mcp', express.json(), async (req, res) => {
@@ -79,6 +69,24 @@ export class MCPServer {
             }
         });
 
+    }
+
+    /**
+     * Registers tools in the configuration
+     */
+    private registerTools(tools: ToolConfiguration[]) {
+
+        tools.forEach(tool => {
+
+            this.server.registerTool(tool.name, {
+                title: tool.title,
+                description: tool.description,
+                inputSchema: tool.inputSchema,
+            }, async (input) => {
+                return await tool.delegate(input);
+            });
+
+        });
     }
 
     /**
