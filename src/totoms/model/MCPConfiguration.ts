@@ -21,4 +21,4 @@ export interface MCPServerConfiguration {
     name: string;   // Name of the MCP server instance
     port: number;   // Port to listen on
     tools?: ToolConfiguration[]; // Optional list of tools to register on the server
-}
+}   

@@ -261,7 +261,7 @@ export class TotoAPIController {
         });
 
         // Log the added path
-        logger.compute("INIT", '[' + this.apiName + '] - Successfully added method ' + 'POST' + ' ' + correctedPath);
+        logger.compute("INIT", 'Successfully added method ' + 'POST' + ' ' + correctedPath);
     }
 
     /**
@@ -397,7 +397,7 @@ export class TotoAPIController {
         }
 
         this.app.listen(this.options.port, () => {
-            logger.compute("INIT", `[${this.apiName}] - Microservice listening on port ${this.options.port}`, 'info');
+            logger.compute("INIT", `Microservice listening on port ${this.options.port}`, 'info');
         });
 
     }
