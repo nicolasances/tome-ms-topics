@@ -1,0 +1,97 @@
+
+import express from "express";
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import z from "zod";
+import { Logger } from "..";
+import { MCPServerConfiguration } from "../model/MCPConfiguration";
+
+export class MCPServer {
+
+    private mcpApp: express.Express;
+    private server: McpServer;
+    private config: MCPServerConfiguration;
+
+    constructor(config: MCPServerConfiguration) {
+
+        this.config = config;
+
+        // MCP Server Setup - Stateless mode (each request gets fresh server/transport)
+        this.mcpApp = express();
+
+        this.server = new McpServer({
+            name: config.name,
+            version: "1.0.0",
+        });
+
+        this.server.registerTool("greetTool", {
+            title: "Greet user by name",
+            description: "Greets a user by their name with a friendly hello message",
+            inputSchema: z.object({
+                name: z.string().describe("Name of the user to greet")
+            }),
+        }, async (input) => {
+            return { content: [{ type: "text", text: `Hello, ${input.name}!` }] };
+        });
+
+        // Register tools ONCE
+        // this.registerTools();
+
+        // Register the MCP route
+        this.mcpApp.post('/mcp', express.json(), async (req, res) => {
+
+            const logger = Logger.getInstance();
+
+            try {
+
+                logger.compute("[MCP Request]", "Received MCP Request on /mcp")
+
+                // Stateless transport - no session management
+                const transport = new StreamableHTTPServerTransport({
+                    sessionIdGenerator: undefined, // Stateless mode
+                });
+
+                // Connect and handle request
+                await this.server.connect(transport);
+
+                await transport.handleRequest(req, res, req.body);
+
+                // Clean up after request completes
+                res.on('close', () => {
+                    transport.close();
+                });
+
+            } catch (error) {
+
+                logger.compute("[MCP Request]", "Error handling MCP Request on /mcp. Error: " + error)
+
+                if (!res.headersSent) {
+
+                    res.status(500).json({
+                        jsonrpc: "2.0",
+                        error: {
+                            code: -32603,
+                            message: "Internal error"
+                        },
+                        id: null
+                    });
+                }
+            }
+        });
+
+    }
+
+    /**
+     * Starts the MCP server and begins listening for requests. 
+     * In this implementation, the server is stateless and creates a new transport for each incoming request.
+     */
+    public listen() {
+
+        this.mcpApp.listen(this.config.port ?? 4001, () => {
+
+            const logger = Logger.getInstance();
+
+            logger.compute("INIT", `MCP Server listening on port ${this.config.port ?? 4001}`, 'info');
+        });
+    }
+}

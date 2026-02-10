@@ -21,4 +21,5 @@ export { TotoMicroservice, TotoMicroserviceConfiguration, getHyperscalerConfigur
 export { TotoEnvironment, SupportedHyperscalers, AWSConfiguration, AzureConfiguration, GCPConfiguration } from './model/TotoEnvironment'
 export { TotoMessageBus, MessageHandlerRegistrationOptions, TopicIdentifier, TotoMessageBusConfiguration } from './evt/MessageBus';
 export { IPubSub, IMessageBus, IQueue, APubSubRequestFilter, APubSubRequestValidator, MessageDestination } from './evt/IMessageBus';
+export { MCPConfiguration } from './model/MCPConfiguration'
 export { TotoMessageHandler, ProcessingResponse } from './evt/TotoMessageHandler';
