@@ -5,15 +5,22 @@ import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } 
 import { TotoMCPDelegate } from "../totoms/mcp/TotoMCPDelegate";
 import { ToolResponse } from "../totoms/mcp/ToolResponse";
 import { TotoMCPToolDefinition } from "../totoms/mcp/TotoMCPToolDefinition";
+import z from "zod";
 
 
 export class GetTopics extends TotoMCPDelegate {
 
     public getToolDefinition(): TotoMCPToolDefinition {
-        throw new Error("Method not implemented.");
+
+        return {
+            name: "getTopics",
+            title: "Get user's topics in Tome",
+            description: "Retrieves all topics associated with the authenticated user that are present in Tome.",
+            inputSchema: z.object({}), // No input needed for this tool
+        }
     }
-    
-    public async processToolRequest(input: any): Promise<ToolResponse> {
+
+    public async processToolRequest(input: any, userContext: UserContext): Promise<ToolResponse> {
 
         const logger = Logger.getInstance();
         const config = this.config as ControllerConfig;
@@ -25,13 +32,20 @@ export class GetTopics extends TotoMCPDelegate {
 
             const db = await config.getMongoDb(config.getDBName());
 
-            const topicStore = new TopicsStore(db, config); 
+            const topicStore = new TopicsStore(db, config);
 
             // Finds all topics of the user
             const topics = await topicStore.findTopicsByUser(user);
 
             // Return the topics
-            return {topics: topics};
+            return {
+                content: [
+                    {
+                        type: "text",
+                        text: `Here are your topics in Tome:\n${JSON.stringify(topics, null, 2)}`
+                    }
+                ]
+            };
 
 
         } catch (error) {
@@ -61,13 +75,13 @@ export class GetTopics extends TotoMCPDelegate {
 
             const db = await config.getMongoDb(config.getDBName());
 
-            const topicStore = new TopicsStore(db, config); 
+            const topicStore = new TopicsStore(db, config);
 
             // Finds all topics of the user
             const topics = await topicStore.findTopicsByUser(user);
 
             // Return the topics
-            return {topics: topics};
+            return { topics: topics };
 
 
         } catch (error) {

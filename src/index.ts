@@ -28,7 +28,7 @@ TotoMicroservice.init({
     apiConfiguration: {
         apiEndpoints: [
             // { method: 'POST', path: '/topics', delegate: PostTopic },
-            // { method: 'GET', path: '/topics', delegate: GetTopics },
+            { method: 'GET', path: '/topics', delegate: GetTopics },
             // { method: 'DELETE', path: '/topics/:id', delegate: DeleteTopic },
             // { method: 'GET', path: '/topics/:topicId', delegate: GetTopic },
             // { method: 'PUT', path: '/topics/:topicId', delegate: PutTopic },
@@ -53,7 +53,8 @@ TotoMicroservice.init({
             name: "Tome Topics MCP Server",
             port: 4100,
             tools: [
-                GreetingDelegate
+                GreetingDelegate, 
+                GetTopics,
             ]
         }
     }

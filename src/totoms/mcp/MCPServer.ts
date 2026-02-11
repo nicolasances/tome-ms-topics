@@ -31,7 +31,10 @@ export class MCPServer {
         // Register tools 
         if (this.config.tools) {
 
-            const tools = this.config.tools.map(ToolClass => new ToolClass(undefined as any, undefined as any)); // Instantiate tools (messageBus and config can be passed if needed)
+            const tools = this.config.tools.map((ToolClass) => {
+
+                return new ToolClass(undefined as any, this.apiControllerConfig)}   // If I ever need a MessageBus in a tool, I should add it here, for now it's undefined
+            );
 
             this.registerTools(tools);
         }
