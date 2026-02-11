@@ -8,15 +8,6 @@ import z from "zod";
 
 export class GreetingDelegate extends TotoMCPDelegate {
 
-    public async processToolRequest(input: any): Promise<ToolResponse> {
-        
-        const name = input.name;
-
-        if (!name) throw new ValidationError(400, "Name is required");
-
-        return { content: [{ type: "text", text: `Hello, ${name}! This is MCP on Toto!` }] };
-    }
-
     public getToolDefinition(): TotoMCPToolDefinition {
 
         return {
@@ -27,6 +18,16 @@ export class GreetingDelegate extends TotoMCPDelegate {
                 name: z.string().describe("Name of the user to greet")
             }),
         };
+    }
+
+
+    public async processToolRequest(input: any, userContext?: UserContext): Promise<ToolResponse> {
+        
+        const name = input.name;
+
+        if (!name) throw new ValidationError(400, "Name is required");
+
+        return { content: [{ type: "text", text: `Hello, ${name}! Your email is ${userContext?.email ?? 'unknown'}` }] };
     }
 
     protected async do(req: Request | FakeRequest, userContext?: UserContext): Promise<any> {

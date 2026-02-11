@@ -27,6 +27,10 @@ export abstract class TotoDelegate {
 
     protected abstract do(req: Request | FakeRequest, userContext?: UserContext): Promise<any>
 
+    public setCorrelationId(cid?: string) {
+        this.cid = cid;
+    }
+
 }
 
 export interface FakeRequest {

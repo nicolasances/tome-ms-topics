@@ -1,4 +1,5 @@
 import { TotoDelegate } from "../model/TotoDelegate";
+import { UserContext } from "../model/UserContext";
 import { ToolResponse } from "./ToolResponse";
 import { TotoMCPToolDefinition } from "./TotoMCPToolDefinition";
 
@@ -9,7 +10,7 @@ export abstract class TotoMCPDelegate extends TotoDelegate {
      * 
      * @param input the input for the tool, validated against the tool's input schema
      */
-    public abstract processToolRequest(input: any): Promise<ToolResponse>;
+    public abstract processToolRequest(input: any, userContext: UserContext): Promise<ToolResponse>;
 
     /**
      * Returns the definition of the tool, including its name, title, description, and input schema.

@@ -82,7 +82,7 @@ export class TotoMicroservice {
             let mcpServer: MCPServer | undefined = undefined;
             if (config.mcpConfiguration?.enableMCP) {
 
-                mcpServer = new MCPServer(config.mcpConfiguration.serverConfiguration);
+                mcpServer = new MCPServer(config.mcpConfiguration.serverConfiguration, customConfig);
 
             }
 

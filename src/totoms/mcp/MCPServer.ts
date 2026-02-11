@@ -2,7 +2,7 @@
 import express from "express";
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { Logger } from "..";
+import { Logger, TotoControllerConfig, UserContext, Validator } from "..";
 import { MCPServerConfiguration } from "../model/MCPConfiguration";
 import { TotoMCPDelegate } from "./TotoMCPDelegate";
 
@@ -11,10 +11,12 @@ export class MCPServer {
     private mcpApp: express.Express;
     private server: McpServer;
     private config: MCPServerConfiguration;
+    private apiControllerConfig: TotoControllerConfig;
 
-    constructor(config: MCPServerConfiguration) {
+    constructor(config: MCPServerConfiguration, apiControllerConfig: TotoControllerConfig) {
 
         this.config = config;
+        this.apiControllerConfig = apiControllerConfig;
 
         // MCP Server Setup - Stateless mode (each request gets fresh server/transport)
         this.mcpApp = express();
@@ -35,11 +37,26 @@ export class MCPServer {
         // Register the MCP route
         this.mcpApp.post('/mcp', express.json(), async (req, res) => {
 
+            const validator = new Validator(this.apiControllerConfig, false);
             const logger = Logger.getInstance();
 
             try {
 
-                logger.compute("[MCP Request]", "Received MCP Request on /mcp")
+                logger.compute("MCP", "Received MCP Request on /mcp")
+
+                // Validating
+                const userContext = await validator.validate(req);
+
+                // Attach userContext to req.auth for MCP SDK to pass to tool handlers
+                (req as any).auth = {
+                    token: req.get('Authorization') ?? '',
+                    clientId: userContext?.userId ?? 'anonymous',
+                    scopes: [],
+                    extra: {
+                        userContext: userContext, 
+                        cid: req.get('x-correlation-id')
+                    }
+                };
 
                 // Stateless transport - no session management
                 const transport = new StreamableHTTPServerTransport({
@@ -58,7 +75,7 @@ export class MCPServer {
 
             } catch (error) {
 
-                logger.compute("[MCP Request]", "Error handling MCP Request on /mcp. Error: " + error)
+                logger.compute("MCP", "Error handling MCP Request on /mcp. Error: " + error)
 
                 if (!res.headersSent) {
 
@@ -66,7 +83,7 @@ export class MCPServer {
                         jsonrpc: "2.0",
                         error: {
                             code: -32603,
-                            message: "Internal error"
+                            message: "Internal error: " + (error instanceof Error ? error.message : String(error)),
                         },
                         id: null
                     });
@@ -89,8 +106,16 @@ export class MCPServer {
                 title: definition.title,
                 description: definition.description,
                 inputSchema: definition.inputSchema,
-            }, async (input) => {
-                return await tool.processToolRequest(input) as any;
+            }, async (input, extra) => {
+
+                const extraInfo = extra.authInfo?.extra as Extra;
+                
+                // Extract User Context and CID
+                const userContext = extraInfo?.userContext as UserContext;
+                tool.setCorrelationId(extraInfo?.cid);
+
+                // Call the tool
+                return await tool.processToolRequest(input, userContext) as any;
             });
 
         });
@@ -109,4 +134,9 @@ export class MCPServer {
             logger.compute("INIT", `MCP Server listening on port ${this.config.port ?? 4001}`, 'info');
         });
     }
+}
+
+interface Extra {
+    userContext?: UserContext;
+    cid?: string;
 }
