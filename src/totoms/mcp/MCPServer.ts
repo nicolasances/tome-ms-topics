@@ -2,7 +2,7 @@
 import express from "express";
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { Logger, TotoControllerConfig, UserContext, Validator } from "..";
+import { Logger, TotoControllerConfig, TotoControllerOptions, UserContext, Validator } from "..";
 import { MCPServerConfiguration } from "../model/MCPConfiguration";
 import { TotoMCPDelegate } from "./TotoMCPDelegate";
 
@@ -12,11 +12,13 @@ export class MCPServer {
     private server: McpServer;
     private config: MCPServerConfiguration;
     private apiControllerConfig: TotoControllerConfig;
+    private controllerOptions: TotoControllerOptions;
 
-    constructor(config: MCPServerConfiguration, apiControllerConfig: TotoControllerConfig) {
+    constructor(config: MCPServerConfiguration, apiControllerConfig: TotoControllerConfig, controllerOptions: TotoControllerOptions) {
 
         this.config = config;
         this.apiControllerConfig = apiControllerConfig;
+        this.controllerOptions = controllerOptions;
 
         // MCP Server Setup - Stateless mode (each request gets fresh server/transport)
         this.mcpApp = express();
@@ -35,14 +37,17 @@ export class MCPServer {
         }
 
         // Register the MCP route
-        this.mcpApp.post('/mcp', express.json(), async (req, res) => {
+        const path = '/mcp';
+        const correctedPath = (this.controllerOptions.basePath ? this.controllerOptions.basePath.replace(/\/$/, '').trim() + path : path);
+
+        this.mcpApp.post(correctedPath, express.json(), async (req, res) => {
 
             const validator = new Validator(this.apiControllerConfig, false);
             const logger = Logger.getInstance();
 
             try {
 
-                logger.compute("MCP", "Received MCP Request on /mcp")
+                logger.compute("MCP", "Received MCP Request on " + correctedPath)
 
                 // Validating
                 const userContext = await validator.validate(req);
@@ -75,7 +80,7 @@ export class MCPServer {
 
             } catch (error) {
 
-                logger.compute("MCP", "Error handling MCP Request on /mcp. Error: " + error)
+                logger.compute("MCP", "Error handling MCP Request on " + correctedPath + ". Error: " + error)
 
                 if (!res.headersSent) {
 
