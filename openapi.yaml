@@ -1,10 +1,14 @@
-openapi: 3.0.3
+openapi: 3.1.0
 info:
   title: Tome Topics API
   description: API for managing learning topics in the Tome application
   version: 1.0.0
   contact:
     name: nicolasances
+
+servers:
+  - url: /tometopics
+    description: Base path for Tome Topics API
 
 security:
   - bearerAuth: []
@@ -56,7 +60,6 @@ paths:
                   example: "Introduction to Machine Learning"
                 blogURL:
                   type: string
-                  format: uri
                   description: URL to the blog post or article for this topic
                   example: "https://blog.example.com/ml-intro"
       responses:
@@ -115,7 +118,7 @@ paths:
 
     put:
       summary: Update topic metadata
-      description: Updates metadata for a specific topic (currently supports icon updates)
+      description: Updates metadata for a specific topic (supports icon, sections, topic code, flashcard generation status, geographic area, and time period)
       operationId: updateTopic
       tags:
         - Topics
@@ -132,14 +135,33 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - icon
               properties:
+                topicCode:
+                  type: string
+                  description: Code identifier for the topic
+                  example: "ml-intro-001"
                 icon:
                   type: string
-                  format: uri
-                  description: URL of the icon for this topic
+                  description: URL or path of the icon for this topic
                   example: "https://example.com/icons/ml.png"
+                sections:
+                  type: array
+                  items:
+                    type: string
+                  description: Section codes in the topic
+                  example: ["section-1", "section-2"]
+                numSections:
+                  type: integer
+                  description: Number of sections in the topic
+                  example: 5
+                flashcardsGenerationComplete:
+                  type: boolean
+                  description: Whether flashcard generation is complete
+                  example: true
+                geoArea:
+                  $ref: '#/components/schemas/GeoAreaMetadata'
+                timePeriod:
+                  $ref: '#/components/schemas/TimePeriodMetadata'
       responses:
         '200':
           description: Topic updated successfully
@@ -149,8 +171,8 @@ paths:
                 type: object
                 properties:
                   result:
-                    type: object
-                    description: Update result from database
+                    type: number
+                    description: Number of documents modified
         '400':
           description: Bad request - missing required fields
           content:
@@ -169,7 +191,7 @@ paths:
       tags:
         - Topics
       parameters:
-        - name: id
+        - name: topicId
           in: path
           required: true
           description: ID of the topic to delete
@@ -245,19 +267,13 @@ components:
   schemas:
     Topic:
       type: object
-      required:
-        - name
-        - blogURL
-        - createdOn
-        - user
       properties:
         id:
           type: string
           description: Unique identifier for the topic
           example: "507f1f77bcf86cd799439011"
         topicCode:
-          type: string
-          nullable: true
+          type: ["string", "null"]
           description: Code identifier for the topic
           example: "ml-intro-001"
         name:
@@ -266,57 +282,90 @@ components:
           example: "Introduction to Machine Learning"
         blogURL:
           type: string
-          format: uri
           description: URL to the source blog post or article
           example: "https://blog.example.com/ml-intro"
         createdOn:
           type: string
-          pattern: '^[0-9]{8}$'
           description: Creation date in YYYYMMDD format
           example: "20260122"
         user:
           type: string
-          format: email
           description: Email of the user who created the topic
           example: "user@example.com"
         lastPracticed:
-          type: string
-          nullable: true
-          pattern: '^[0-9]{8}$'
+          type: ["string", "null"]
           description: Last practice date in YYYYMMDD format
           example: "20260122"
         generation:
-          type: string
-          nullable: true
+          type: ["string", "null"]
           description: Generation identifier
         flashcardsCount:
-          type: integer
-          nullable: true
+          type: ["integer", "null"]
           description: Number of flashcards generated for this topic
           example: 15
         flashcardsGenerationComplete:
-          type: boolean
-          nullable: true
+          type: ["boolean", "null"]
           description: Whether flashcard generation is complete
           example: true
         numSections:
-          type: integer
-          nullable: true
+          type: ["integer", "null"]
           description: Number of sections in the topic
           example: 5
         sections:
-          type: array
-          nullable: true
+          type: ["array", "null"]
           items:
             type: string
           description: Section codes in the topic
           example: ["section-1", "section-2"]
         icon:
-          type: string
-          nullable: true
-          format: uri
-          description: URL of the icon for this topic
+          type: ["string", "null"]
+          description: URL or path of the icon for this topic
           example: "https://example.com/icons/ml.png"
+        geoArea:
+          anyOf:
+            - $ref: '#/components/schemas/GeoAreaMetadata'
+            - type: "null"
+        timePeriod:
+          anyOf:
+            - $ref: '#/components/schemas/TimePeriodMetadata'
+            - type: "null"
+
+    GeoAreaMetadata:
+      type: object
+      properties:
+        mainArea:
+          $ref: '#/components/schemas/GeoArea'
+        allAreas:
+          type: array
+          items:
+            $ref: '#/components/schemas/GeoArea'
+          description: All geographic areas related to this topic
+
+    GeoArea:
+      type: string
+      enum:
+        - Europe
+        - North America
+        - South America
+        - Africa
+        - Middle East
+        - Russia
+        - Asia
+        - Oceania
+        - Polar
+      description: Geographic area designation
+
+    TimePeriodMetadata:
+      type: object
+      properties:
+        startYear:
+          type: integer
+          description: Start year of the time period
+          example: 1945
+        endYear:
+          type: integer
+          description: End year of the time period
+          example: 1991
 
     Error:
       type: object

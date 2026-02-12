@@ -1,6 +1,6 @@
 import { Request } from "express";
 import { ControllerConfig } from "../Config";
-import { TopicsStore } from "../store/TopicsStore";
+import { TopicMetadata, TopicsStore } from "../store/TopicsStore";
 import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "totoms";
 
 
@@ -14,11 +14,7 @@ export class PutTopic extends TotoDelegate {
 
         const topicId = req.params.topicId;
 
-        // Validate mandatory fields
-        if (!body.icon) throw new ValidationError(400, "No iconUrl provided");
-
-        // Extract user
-        const user = userContext.email;
+        const topicMetadata = TopicMetadata.fromHTTPBody(body);
 
         try {
 
@@ -26,7 +22,7 @@ export class PutTopic extends TotoDelegate {
 
             const topicStore = new TopicsStore(db, config);
 
-            const result = await topicStore.updateTopicMetadata(topicId, { icon: body.icon });
+            const result = await topicStore.updateTopicMetadata(topicId, topicMetadata);
 
             // Return something
             return { result: result }

@@ -15,8 +15,10 @@ export class Topic {
     numSections?: number; // Number of sections in the topic
     sections?: string[]; // Section codes in the topic
     icon?: string; // Icon URL
+    geoArea?: GeoAreaMetadata;
+    timePeriod?: TimePeriodMetadata;
 
-    constructor(name: string, blogURL: string, createdOn: string, user: string, lastPracticed?: string, generation?: string, flashcardsCount?: number, numSections?: number, flashcardsGenerationComplete?: boolean, topicCode?: string, sections?: string[]) {
+    constructor(name: string, blogURL: string, createdOn: string, user: string, lastPracticed?: string, generation?: string, flashcardsCount?: number, numSections?: number, flashcardsGenerationComplete?: boolean, topicCode?: string, sections?: string[], geoArea?: GeoAreaMetadata, timePeriod?: TimePeriodMetadata) {
         this.topicCode = topicCode;
         this.name = name;
         this.blogURL = blogURL;
@@ -28,6 +30,8 @@ export class Topic {
         this.flashcardsGenerationComplete = flashcardsGenerationComplete;
         this.numSections = numSections;
         this.sections = sections;
+        this.geoArea = geoArea;
+        this.timePeriod = timePeriod;
     }
 
     static fromBSON(data: WithId<any>): Topic {
@@ -35,7 +39,8 @@ export class Topic {
         let topic = new Topic(data.name, data.blogURL, data.createdOn, data.user, data.lastPracticed, data.generation, data.flashcardsCount, data.numSections, data.isFlashcardGenerationComplete, data.topicCode, data.sections);
         topic.id = data._id; 
         topic.icon = data.icon;
-
+        topic.geoArea = data.geoArea;
+        topic.timePeriod = data.timePeriod;
         return topic;
     }
 
@@ -52,8 +57,22 @@ export class Topic {
             numSections: this.numSections,
             isFlashcardGenerationComplete: this.flashcardsGenerationComplete,
             sections: this.sections,
-            icon: this.icon
+            icon: this.icon, 
+            geoArea: this.geoArea,
+            timePeriod: this.timePeriod
         };
     }
 
+}
+
+export interface GeoAreaMetadata {
+    mainArea: GeoArea;
+    allAreas: GeoArea[];
+}
+
+export type GeoArea = "Europe" | "North America" | "South America" | "Africa" | "Middle East" | "Russia" | "Asia" | "Oceania" | "Polar";
+
+export interface TimePeriodMetadata {
+    startYear: number;
+    endYear: number;
 }
