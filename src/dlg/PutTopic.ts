@@ -1,20 +1,19 @@
 import { Request } from "express";
 import { ControllerConfig } from "../Config";
 import { TopicMetadata, TopicsStore } from "../store/TopicsStore";
-import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "totoms";
+import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoms";
 
 
-export class PutTopic extends TotoDelegate {
+export class PutTopic extends TotoDelegate<any, PutTopicResponse> {
 
-    async do(req: Request, userContext: UserContext): Promise<any> {
+    async do(req: any, userContext: UserContext): Promise<PutTopicResponse> {
 
-        const body = req.body
         const logger = Logger.getInstance();
         const config = this.config as ControllerConfig;
 
         const topicId = req.params.topicId;
 
-        const topicMetadata = TopicMetadata.fromHTTPBody(body);
+        const topicMetadata = TopicMetadata.fromHTTPBody(req);
 
         try {
 
@@ -42,5 +41,13 @@ export class PutTopic extends TotoDelegate {
         }
 
     }
+    
+    public parseRequest(req: Request) {
+        return req.body;
+    }
 
+}
+
+interface PutTopicResponse {
+    result: number
 }

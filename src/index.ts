@@ -9,11 +9,6 @@ import { OnPracticeFinished } from "./evt/handlers/OnPracticeFinished";
 import { OnTopicScraped } from "./evt/handlers/OnTopicScraped";
 import { SupportedHyperscalers, TotoMicroservice, getHyperscalerConfiguration } from "./totoms"
 import { PutTopic } from "./dlg/PutTopic";
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import z from "zod";
-import express from "express";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { GreetingDelegate } from "./dlg/GreetingDlg";
 
 
 TotoMicroservice.init({
@@ -27,12 +22,12 @@ TotoMicroservice.init({
     customConfiguration: ControllerConfig,
     apiConfiguration: {
         apiEndpoints: [
-            // { method: 'POST', path: '/topics', delegate: PostTopic },
+            { method: 'POST', path: '/topics', delegate: PostTopic },
             { method: 'GET', path: '/topics', delegate: GetTopics },
-            // { method: 'DELETE', path: '/topics/:id', delegate: DeleteTopic },
-            // { method: 'GET', path: '/topics/:topicId', delegate: GetTopic },
-            // { method: 'PUT', path: '/topics/:topicId', delegate: PutTopic },
-            // { method: 'POST', path: '/topics/:topicId/refresh', delegate: RefreshTopic }
+            { method: 'DELETE', path: '/topics/:id', delegate: DeleteTopic },
+            { method: 'GET', path: '/topics/:topicId', delegate: GetTopic },
+            { method: 'PUT', path: '/topics/:topicId', delegate: PutTopic },
+            { method: 'POST', path: '/topics/:topicId/refresh', delegate: RefreshTopic }
         ],
         apiOptions: { noCorrelationId: true },
         openAPISpecification: { localSpecsFilePath: './openapi.yaml' }
@@ -53,8 +48,8 @@ TotoMicroservice.init({
             name: "Tome Topics MCP Server",
             port: 4100,
             tools: [
-                GreetingDelegate, 
                 GetTopics,
+                GetTopic
             ]
         }
     }

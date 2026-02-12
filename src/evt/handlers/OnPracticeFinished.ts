@@ -1,7 +1,7 @@
 import { ControllerConfig } from "../../Config";
 import { Practice } from "../../model/Practice";
 import { TopicsStore } from "../../store/TopicsStore";
-import { Logger, TotoMessage, TotoRuntimeError, ValidationError, ProcessingResponse, TotoMessageHandler } from "totoms";
+import { Logger, TotoMessage, TotoRuntimeError, ValidationError, ProcessingResponse, TotoMessageHandler } from "../../totoms";
 export class OnPracticeFinished extends TotoMessageHandler {
 
     protected handledMessageType: string = 'practiceFinished';

@@ -1,13 +1,13 @@
 import { Request } from "express";
 import { ControllerConfig } from "../Config";
-import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "totoms";
+import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoms";
 import { TopicsStore } from "../store/TopicsStore";
 import { EVENTS } from "../evt/Events";
 
 
-export class DeleteTopic extends TotoDelegate {
+export class DeleteTopic extends TotoDelegate<DeleteTopicRequest, DeleteTopicResponse> {
 
-    async do(req: Request, userContext: UserContext): Promise<any> {
+    async do(req: DeleteTopicRequest, userContext: UserContext): Promise<DeleteTopicResponse> {
 
         const logger = Logger.getInstance();
         const config = this.config as ControllerConfig;
@@ -24,18 +24,18 @@ export class DeleteTopic extends TotoDelegate {
             const topicStore = new TopicsStore(db, config);
 
             // Read the topic
-            const topic = await topicStore.findTopicById(req.params.id);
+            const topic = await topicStore.findTopicById(req.topicId);
 
-            if (!topic) throw new ValidationError(404, `Topic with id ${req.params.id} not found for user ${user}`);
+            if (!topic) throw new ValidationError(404, `Topic with id ${req.topicId} not found for user ${user}`);
 
-            const deletedCount = await topicStore.deleteTopicById(req.params.id, user)
+            const deletedCount = await topicStore.deleteTopicById(req.topicId, user)
 
             // Publish the event
             if (deletedCount > 0) await this.messageBus.publishMessage({ topic: "tometopics" }, {
                 cid: this.cid!,
-                id: req.params.id,
+                id: req.topicId,
                 type: EVENTS.topicDeleted,
-                msg: `Topic ${req.params.id} deleted by user ${user}`,
+                msg: `Topic ${req.topicId} deleted by user ${user}`,
                 timestamp: new Date().toISOString(),
                 data: topic
             })
@@ -58,5 +58,18 @@ export class DeleteTopic extends TotoDelegate {
         }
 
     }
+    public parseRequest(req: Request): DeleteTopicRequest {
+        return {
+            topicId: req.params.id
+        }
+    }
 
+}
+
+interface DeleteTopicRequest {
+    topicId: string;
+}
+
+interface DeleteTopicResponse {
+    deletedCount: number;
 }

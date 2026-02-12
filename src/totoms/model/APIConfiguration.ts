@@ -25,7 +25,7 @@ export interface APIConfiguration {
 export interface TotoAPIEndpoint {
     method: 'GET' | 'POST' | 'PUT' | 'DELETE';
     path: string;
-    delegate: new (messageBus: TotoMessageBus, config: TotoControllerConfig) => TotoDelegate;
+    delegate: new (messageBus: TotoMessageBus, config: TotoControllerConfig) => TotoDelegate<any, any>;
 }
 
 export interface APIOptions {
