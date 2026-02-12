@@ -155,8 +155,10 @@ export class TotoAPIController {
 
                 logger.apiIn(req.headers['x-correlation-id'], 'GET', correctedPath);
 
+                const totoRequest =  delegate.parseRequest(req);
+
                 // Execute the GET
-                delegate.processRequest(req, userContext).then((stream) => {
+                delegate.processRequest(totoRequest, userContext).then((stream) => {
 
                     // Add any additional configured headers
                     if (options && options.contentType) res.header('Content-Type', options.contentType);
@@ -239,12 +241,14 @@ export class TotoAPIController {
 
             req.busboy.on("finish", () => {
 
-                delegate.processRequest({
+                const totoRequest = delegate.parseRequest({
                     query: req.query,
                     params: req.params,
                     headers: req.headers,
                     body: { filepath: filepath, filename: filename, ...additionalData }
-                }, userContext).then((data) => {
+                } as Request);
+
+                delegate.processRequest(totoRequest, userContext).then((data) => {
                     // Success
                     res.status(200).type('application/json').send(data);
 
