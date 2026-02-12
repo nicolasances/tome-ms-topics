@@ -14,7 +14,7 @@ import { PutTopic } from "./dlg/PutTopic";
 TotoMicroservice.init({
     serviceName: "tome-ms-topics",
     basePath: '/tometopics',
-    port: 9000,
+    port: 8080,
     environment: {
         hyperscaler: process.env.HYPERSCALER as SupportedHyperscalers || "aws",
         hyperscalerConfiguration: getHyperscalerConfiguration()
