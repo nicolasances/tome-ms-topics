@@ -2,7 +2,7 @@
 import express from "express";
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { Logger, TotoControllerConfig, TotoControllerOptions, UserContext, Validator } from "..";
+import { Logger, TotoAPIController, TotoControllerConfig, TotoControllerOptions, UserContext, Validator } from "..";
 import { MCPServerConfiguration } from "./MCPConfiguration";
 import { TotoMCPDelegate } from "./TotoMCPDelegate";
 
@@ -14,14 +14,14 @@ export class MCPServer {
     private apiControllerConfig: TotoControllerConfig;
     private controllerOptions: TotoControllerOptions;
 
-    constructor(config: MCPServerConfiguration, apiControllerConfig: TotoControllerConfig, controllerOptions: TotoControllerOptions) {
+    constructor(apiController: TotoAPIController, config: MCPServerConfiguration, apiControllerConfig: TotoControllerConfig, controllerOptions: TotoControllerOptions) {
 
         this.config = config;
         this.apiControllerConfig = apiControllerConfig;
         this.controllerOptions = controllerOptions;
 
         // MCP Server Setup - Stateless mode (each request gets fresh server/transport)
-        this.mcpApp = express();
+        this.mcpApp = apiController.app; // Use the same Express app as the API controller to share the server and port
 
         this.server = new McpServer({
             name: config.name,
@@ -129,19 +129,6 @@ export class MCPServer {
         });
     }
 
-    /**
-     * Starts the MCP server and begins listening for requests. 
-     * In this implementation, the server is stateless and creates a new transport for each incoming request.
-     */
-    public listen() {
-
-        this.mcpApp.listen(this.config.port ?? 4001, () => {
-
-            const logger = Logger.getInstance();
-
-            logger.compute("INIT", `MCP Server listening on port ${this.config.port ?? 4001}`, 'info');
-        });
-    }
 }
 
 interface Extra {
