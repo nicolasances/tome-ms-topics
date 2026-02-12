@@ -1,12 +1,25 @@
 import { Request } from "express";
 import { ControllerConfig } from "../Config";
 import { TopicsStore } from "../store/TopicsStore";
-import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "totoms";
+import { Logger, TotoRuntimeError, UserContext, ValidationError } from "totoms";
+import { TotoMCPDelegate, TotoMCPToolDefinition } from "totoms";
+import z from "zod";
+import { Topic } from "../model/Topic";
 
 
-export class GetTopics extends TotoDelegate {
+export class GetTopics extends TotoMCPDelegate<GetTopicsRequest, GetTopicsResponse> {
 
-    async do(req: Request, userContext: UserContext): Promise<any> {
+    public getToolDefinition(): TotoMCPToolDefinition {
+
+        return {
+            name: "getTopics",
+            title: "Get user's topics in Tome",
+            description: "Retrieves all topics associated with the authenticated user that are present in Tome.",
+            inputSchema: z.object({}), // No input needed for this tool
+        }
+    }
+
+    async do(req: GetTopicsRequest, userContext: UserContext): Promise<GetTopicsResponse> {
 
         const logger = Logger.getInstance();
         const config = this.config as ControllerConfig;
@@ -18,13 +31,13 @@ export class GetTopics extends TotoDelegate {
 
             const db = await config.getMongoDb(config.getDBName());
 
-            const topicStore = new TopicsStore(db, config); 
+            const topicStore = new TopicsStore(db, config);
 
             // Finds all topics of the user
             const topics = await topicStore.findTopicsByUser(user);
 
             // Return the topics
-            return {topics: topics};
+            return { topics: topics };
 
 
         } catch (error) {
@@ -43,4 +56,15 @@ export class GetTopics extends TotoDelegate {
 
     }
 
+    public parseRequest(req: Request): GetTopicsRequest {
+        return {}
+    }
+
+}
+
+interface GetTopicsRequest {
+}
+
+interface GetTopicsResponse {
+    topics: Topic[];
 }

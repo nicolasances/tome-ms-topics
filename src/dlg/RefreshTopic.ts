@@ -5,14 +5,14 @@ import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } 
 import { EVENTS } from "../evt/Events";
 
 
-export class RefreshTopic extends TotoDelegate {
+export class RefreshTopic extends TotoDelegate<RefreshTopicRequest, RefreshTopicResponse> {
 
-    async do(req: Request, userContext: UserContext): Promise<any> {
+    async do(req: RefreshTopicRequest, userContext: UserContext): Promise<RefreshTopicResponse> {
 
         const logger = Logger.getInstance();
         const config = this.config as ControllerConfig;
 
-        const topicId = req.params.topicId;
+        const topicId = req.topicId;
 
         // Extract user
         const user = userContext.email;
@@ -61,4 +61,18 @@ export class RefreshTopic extends TotoDelegate {
 
     }
 
+    public parseRequest(req: Request): RefreshTopicRequest {
+        return {
+            topicId: req.params.topicId
+        }
+    }
+
+}
+
+interface RefreshTopicRequest {
+    topicId: string;
+}
+
+interface RefreshTopicResponse {
+    refreshed: boolean;
 }

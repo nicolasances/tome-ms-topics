@@ -7,17 +7,12 @@ import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } 
 import { EVENTS } from "../evt/Events";
 
 
-export class PostTopic extends TotoDelegate {
+export class PostTopic extends TotoDelegate<PostTopicRequest, PostTopicResponse> {
 
-    async do(req: Request, userContext: UserContext): Promise<any> {
+    async do(req: PostTopicRequest, userContext: UserContext): Promise<PostTopicResponse> {
 
-        const body = req.body
         const logger = Logger.getInstance();
         const config = this.config as ControllerConfig;
-
-        // Validate mandatory fields
-        if (!body.name) throw new ValidationError(400, "No name provided");
-        if (!body.blogURL) throw new ValidationError(400, "No Blog URL provided");
 
         // Extract user
         const user = userContext.email;
@@ -29,17 +24,17 @@ export class PostTopic extends TotoDelegate {
             const topicStore = new TopicsStore(db, config);
 
             // Check that the topic does not already exist
-            const preexistingTopic = await topicStore.findTopicByName(body.name, user);
+            const preexistingTopic = await topicStore.findTopicByName(req.name, user);
 
-            if (preexistingTopic) throw new ValidationError(400, `Topic with name ${body.name} already exists. It was created by user ${preexistingTopic.user}.`);
+            if (preexistingTopic) throw new ValidationError(400, `Topic with name ${req.name} already exists. It was created by user ${preexistingTopic.user}.`);
 
             // Save the topic 
-            const topic = new Topic(body.name, body.blogURL, moment().tz("Europe/Rome").format("YYYYMMDD"), user);
+            const topic = new Topic(req.name, req.blogURL, moment().tz("Europe/Rome").format("YYYYMMDD"), user);
 
             const id = await topicStore.saveTopic(topic);
 
             // Publish the event
-            // await new EventPublisher(execContext, "tometopics").publishEvent(id, EVENTS.topicCreated, `Topic ${body.name} created by user ${user}`, topic);
+            // await new EventPublisher(execContext, "tometopics").publishEvent(id, EVENTS.topicCreated, `Topic ${req.name} created by user ${user}`, topic);
             await this.messageBus.publishMessage({ topic: "tometopics" }, {
                 cid: this.cid!,
                 id: id,
@@ -69,4 +64,25 @@ export class PostTopic extends TotoDelegate {
 
     }
 
+    public parseRequest(req: Request): PostTopicRequest {
+
+        // Validate mandatory fields
+        if (!req.body.name) throw new ValidationError(400, "No name provided");
+        if (!req.body.blogURL) throw new ValidationError(400, "No Blog URL provided");
+
+        return {
+            name: req.body.name,
+            blogURL: req.body.blogURL
+        }
+    }
+
+}
+
+interface PostTopicRequest {
+    name: string;
+    blogURL: string;
+}
+
+interface PostTopicResponse {
+    id: string;
 }
