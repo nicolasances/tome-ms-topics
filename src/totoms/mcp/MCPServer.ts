@@ -3,7 +3,7 @@ import express from "express";
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { Logger, TotoControllerConfig, TotoControllerOptions, UserContext, Validator } from "..";
-import { MCPServerConfiguration } from "../model/MCPConfiguration";
+import { MCPServerConfiguration } from "./MCPConfiguration";
 import { TotoMCPDelegate } from "./TotoMCPDelegate";
 
 export class MCPServer {
@@ -104,7 +104,7 @@ export class MCPServer {
     /**
      * Registers tools in the configuration
      */
-    private registerTools(tools: TotoMCPDelegate[]) {
+    private registerTools(tools: TotoMCPDelegate<any, any>[]) {
 
         tools.forEach(tool => {
 

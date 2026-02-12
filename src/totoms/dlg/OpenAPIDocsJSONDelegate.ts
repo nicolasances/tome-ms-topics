@@ -4,7 +4,7 @@ import { UserContext } from "../model/UserContext";
 import { TotoMessageBus } from "../evt/MessageBus";
 import { TotoControllerConfig } from "../model/TotoControllerConfig";
 
-export class OpenAPIDocsJSONDelegate extends TotoDelegate {
+export class OpenAPIDocsJSONDelegate extends TotoDelegate<any, any> {
 
     swaggerDocJSON: any;
 

@@ -2,8 +2,9 @@ import { Request } from "express";
 import { UserContext } from "./UserContext";
 import { TotoMessageBus } from "../evt/MessageBus";
 import { TotoControllerConfig } from "./TotoControllerConfig";
+import { TotoRequest } from "./TotoRequest";
 
-export abstract class TotoDelegate {
+export abstract class TotoDelegate<I extends TotoRequest, O> {
 
     protected cid?: string = undefined;
 
@@ -14,18 +15,22 @@ export abstract class TotoDelegate {
      * 
      * This method wraps the abstract do() method to provide common pre- and post-processing logic if needed.
      * 
-     * @param req the HTTP request
+     * @param req a Toto request
      * @param userContext the User Context, if available
      */
-    public async processRequest(req: Request | FakeRequest, userContext?: UserContext): Promise<any> {
-
-        // Extract CID
-        this.cid = req.headers['x-correlation-id'] || req.headers['X-Correlation-Id'];
+    public async processRequest(req: I, userContext?: UserContext): Promise<O> {
 
         return this.do(req, userContext);
     }
 
-    protected abstract do(req: Request | FakeRequest, userContext?: UserContext): Promise<any>
+    /**
+     * Method to be implemented by the delegate to process the request. 
+     * This is where the main logic of the delegate should be implemented.
+     * 
+     * @param req The TotoRequest object
+     * @param userContext the User Context
+     */
+    protected abstract do(req: I, userContext?: UserContext): Promise<O>
 
     public setCorrelationId(cid?: string) {
         this.cid = cid;

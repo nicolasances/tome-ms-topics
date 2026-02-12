@@ -140,7 +140,7 @@ export class TotoAPIController {
      * @param {object} options options to configure this path: 
      *  - contentType: (OPT, default null) provide the Content-Type header to the response
      */
-    streamGET(path: string, delegate: TotoDelegate, options?: TotoPathOptions) {
+    streamGET(path: string, delegate: TotoDelegate<any, any>, options?: TotoPathOptions) {
 
         // If a basepath is defined, prepend it to the path
         // Make sure that the basePath does not end with "/". If it does remove it. 
@@ -188,7 +188,7 @@ export class TotoAPIController {
      * Adds a path that support uploading files
      *  - path:     the path as expected by express. E.g. '/upload'
      */
-    fileUploadPath(path: string, delegate: TotoDelegate, options?: TotoPathOptions) {
+    fileUploadPath(path: string, delegate: TotoDelegate<any, any>, options?: TotoPathOptions) {
 
         // If a basepath is defined, prepend it to the path
         // Make sure that the basePath does not end with "/". If it does remove it. 
@@ -328,7 +328,7 @@ export class TotoAPIController {
      *  - delegate: the delegate that exposes a do() function. Note that the delegate will always receive the entire req object
      *  - options:  optional options to path
      */
-    path(method: string, path: string, delegate: TotoDelegate, options?: TotoPathOptions) {
+    path(method: string, path: string, delegate: TotoDelegate<any, any>, options?: TotoPathOptions) {
 
         // If a basepath is defined, prepend it to the path
         // Make sure that the basePath does not end with "/". If it does remove it. 
@@ -340,6 +340,8 @@ export class TotoAPIController {
         const handleRequest = async (req: Request, res: Response) => {
 
             const cid = String(req.headers['x-correlation-id']);
+            
+            delegate.setCorrelationId(cid);
 
             try {
 
