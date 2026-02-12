@@ -340,7 +340,7 @@ export class TotoAPIController {
         const handleRequest = async (req: Request, res: Response) => {
 
             const cid = String(req.headers['x-correlation-id']);
-            
+
             delegate.setCorrelationId(cid);
 
             try {
@@ -351,8 +351,11 @@ export class TotoAPIController {
                 // Validating
                 const userContext = await validator.validate(req, options);
 
+                // Conver the request into the format expected by the delegate 
+                const totoRequest =  delegate.parseRequest(req);
+
                 // Execute the GET
-                const data = await delegate.processRequest(req, userContext);
+                const data = await delegate.processRequest(totoRequest, userContext);
 
                 let contentType = 'application/json'
                 let dataToReturn = data;

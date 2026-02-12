@@ -32,6 +32,25 @@ export abstract class TotoDelegate<I extends TotoRequest, O> {
      */
     protected abstract do(req: I, userContext?: UserContext): Promise<O>
 
+    /**
+     * Parse the incoming Express Request into the specific TotoRequest type expected by this delegate.
+     * 
+     * Important: 
+     * - This method should also have the responsibility to validate the incoming request and throw appropriate errors if the request is invalid.
+     * 
+     * @param req the Express Request object
+     * 
+     * @return an instance of the specific TotoRequest type expected by this delegate
+     * 
+     * @throws ValidationError if the request is invalid
+     */
+    public abstract parseRequest(req: Request): I;
+
+    /**
+     * Sets the delegate's correlation Id for the current request. This can be used for logging and tracing purposes.
+     * 
+     * @param cid the request's correlation Id (if any)
+     */
     public setCorrelationId(cid?: string) {
         this.cid = cid;
     }

@@ -5,7 +5,7 @@ import { TotoMessageBus } from "../evt/MessageBus";
 import { TotoControllerConfig } from "../model/TotoControllerConfig";
 
 export class OpenAPIDocsJSONDelegate extends TotoDelegate<any, any> {
-
+    
     swaggerDocJSON: any;
 
     constructor(messageBus: TotoMessageBus, config: TotoControllerConfig, swaggerDocJSON: any) {
@@ -18,6 +18,9 @@ export class OpenAPIDocsJSONDelegate extends TotoDelegate<any, any> {
         return this.swaggerDocJSON;
 
     }
-
+    
+    public parseRequest(req: Request) {
+        return {};
+    }
 
 }

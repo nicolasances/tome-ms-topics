@@ -4,9 +4,9 @@ import { UserContext } from "../model/UserContext";
 import { TotoRequest } from "../model/TotoRequest";
 
 export class SmokeDelegate extends TotoDelegate<SmokeRequest, SmokeResponse> {
-
+    
     apiName?: string;   // Injected
-
+    
     async do(req: SmokeRequest, userContext: UserContext | undefined): Promise<SmokeResponse> {
 
         return {
@@ -15,19 +15,14 @@ export class SmokeDelegate extends TotoDelegate<SmokeRequest, SmokeResponse> {
         }
 
     }
-
+    
+    public parseRequest(req: Request): SmokeRequest {
+        return new SmokeRequest();
+    }
 
 }
 
 class SmokeRequest extends TotoRequest {
-
-    /**
-     * Creates a SmokeRequest from an Express Request.
-     * SmokeRequest has no specific fields, so just returns a new instance.
-     */
-    static fromExpress(req: Request): SmokeRequest {
-        return new SmokeRequest();
-    }
 
 }
 
