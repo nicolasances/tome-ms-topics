@@ -1,10 +1,8 @@
 import { Request } from "express";
 import { ControllerConfig } from "../Config";
 import { TopicsStore } from "../store/TopicsStore";
-import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoms";
-import { TotoMCPDelegate } from "../totoms/mcp/TotoMCPDelegate";
-import { ToolResponse } from "../totoms/mcp/ToolResponse";
-import { TotoMCPToolDefinition } from "../totoms/mcp/TotoMCPToolDefinition";
+import { Logger, TotoRuntimeError, UserContext, ValidationError } from "totoms";
+import { TotoMCPDelegate, TotoMCPToolDefinition } from "totoms";
 import z from "zod";
 import { Topic } from "../model/Topic";
 

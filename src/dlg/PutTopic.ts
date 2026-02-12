@@ -1,7 +1,7 @@
 import { Request } from "express";
 import { ControllerConfig } from "../Config";
 import { TopicMetadata, TopicsStore } from "../store/TopicsStore";
-import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "../totoms";
+import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "totoms";
 
 
 export class PutTopic extends TotoDelegate<any, PutTopicResponse> {

@@ -1,7 +1,7 @@
 import { Request } from "express";
 import { ControllerConfig } from "../Config";
 import { TopicsStore } from "../store/TopicsStore";
-import { Logger, TotoMCPDelegate, TotoMCPToolDefinition, TotoRuntimeError, UserContext, ValidationError } from "../totoms";
+import { Logger, TotoMCPDelegate, TotoMCPToolDefinition, TotoRuntimeError, UserContext, ValidationError } from "totoms";
 import z from "zod";
 import { Topic } from "../model/Topic";
 
