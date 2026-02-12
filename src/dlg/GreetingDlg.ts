@@ -1,12 +1,11 @@
 import { Request } from "express";
-import { FakeRequest, UserContext } from "../totoms";
+import { UserContext } from "../totoms";
 import { TotoMCPDelegate } from "../totoms/mcp/TotoMCPDelegate";
 import { TotoMCPToolDefinition } from "../totoms/mcp/TotoMCPToolDefinition";
 import { ValidationError } from "totoms";
-import { ToolResponse } from "../totoms/mcp/ToolResponse";
 import z from "zod";
 
-export class GreetingDelegate extends TotoMCPDelegate {
+export class GreetingDelegate extends TotoMCPDelegate<GreetingRequest, GreetingResponse> {
 
     public getToolDefinition(): TotoMCPToolDefinition {
 
@@ -21,21 +20,24 @@ export class GreetingDelegate extends TotoMCPDelegate {
     }
 
 
-    public async processToolRequest(input: any, userContext?: UserContext): Promise<ToolResponse> {
-        
-        const name = input.name;
+    protected async do(req: GreetingRequest, userContext?: UserContext): Promise<GreetingResponse> {
+
+        const name = req.name;
 
         if (!name) throw new ValidationError(400, "Name is required");
 
-        return { content: [{ type: "text", text: `Hello, ${name}! Your email is ${userContext?.email ?? 'unknown'}` }] };
+        return { text: `Hello, ${name}! I think your email is ${userContext?.email ?? 'unknown'}` };
     }
 
-    protected async do(req: Request | FakeRequest, userContext?: UserContext): Promise<any> {
-
-        const name = req.body.name;
-
-        if (!name) throw new ValidationError(400, "Name is required");
-
-        return { content: [{ type: "text", text: `Hello, ${name}!` }] };
+    public parseRequest(req: Request): GreetingRequest {
+        return { name: req.body.name }
     }
+}
+
+interface GreetingRequest {
+    name: string;
+}
+
+interface GreetingResponse {
+    text: string;
 }

@@ -1,10 +1,11 @@
 import { Request } from "express";
 import { ControllerConfig } from "../Config";
 import { TopicsStore } from "../store/TopicsStore";
-import { Logger, ToolResponse, TotoDelegate, TotoMCPDelegate, TotoMCPToolDefinition, TotoRuntimeError, UserContext, ValidationError } from "../totoms";
+import { Logger, TotoMCPDelegate, TotoMCPToolDefinition, TotoRuntimeError, UserContext, ValidationError } from "../totoms";
 import z from "zod";
+import { Topic } from "../model/Topic";
 
-export class GetTopic extends TotoMCPDelegate {
+export class GetTopic extends TotoMCPDelegate<GetTopicRequest, Topic | null> {
 
     public getToolDefinition(): TotoMCPToolDefinition {
 
@@ -17,55 +18,13 @@ export class GetTopic extends TotoMCPDelegate {
             }),
         }
     }
-    public async processToolRequest(input: any, userContext: UserContext): Promise<ToolResponse> {
+
+    async do(req: GetTopicRequest, userContext: UserContext): Promise<Topic | null> {
 
         const logger = Logger.getInstance();
         const config = this.config as ControllerConfig;
 
-        const topicId = input.topicId;
-
-        // Extract user
-        const user = userContext.email;
-
-        try {
-
-            // Instantiate the DB
-            const db = await config.getMongoDb(config.getDBName());
-
-            const topicStore = new TopicsStore(db, config);
-
-            const topic = await topicStore.findTopicById(topicId);
-
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: `Here are the details of the topic with ID ${topicId}:\n${JSON.stringify(topic, null, 2)}`
-                    }
-                ]
-            }
-
-        } catch (error) {
-
-            logger.compute(this.cid, `${error}`, "error")
-
-            if (error instanceof ValidationError || error instanceof TotoRuntimeError) {
-                throw error;
-            }
-            else {
-                console.log(error);
-                throw error;
-            }
-
-        }
-    }
-
-    async do(req: Request, userContext: UserContext): Promise<any> {
-
-        const logger = Logger.getInstance();
-        const config = this.config as ControllerConfig;
-
-        const topicId = req.params.topicId;
+        const topicId = req.topicId;
 
         // Extract user
         const user = userContext.email;
@@ -96,4 +55,17 @@ export class GetTopic extends TotoMCPDelegate {
 
     }
 
+    public parseRequest(req: Request): GetTopicRequest {
+
+        if (!req.params.topicId) throw new ValidationError(400, "topicId parameter is required");
+
+        return {
+            topicId: req.params.topicId
+        }
+    }
+
+}
+
+interface GetTopicRequest {
+    topicId: string;
 }

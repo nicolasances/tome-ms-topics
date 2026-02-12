@@ -6,9 +6,10 @@ import { TotoMCPDelegate } from "../totoms/mcp/TotoMCPDelegate";
 import { ToolResponse } from "../totoms/mcp/ToolResponse";
 import { TotoMCPToolDefinition } from "../totoms/mcp/TotoMCPToolDefinition";
 import z from "zod";
+import { Topic } from "../model/Topic";
 
 
-export class GetTopics extends TotoMCPDelegate {
+export class GetTopics extends TotoMCPDelegate<GetTopicsRequest, GetTopicsResponse> {
 
     public getToolDefinition(): TotoMCPToolDefinition {
 
@@ -20,50 +21,7 @@ export class GetTopics extends TotoMCPDelegate {
         }
     }
 
-    public async processToolRequest(input: any, userContext: UserContext): Promise<ToolResponse> {
-
-        const logger = Logger.getInstance();
-        const config = this.config as ControllerConfig;
-
-        // Extract user
-        const user = userContext.email;
-
-        try {
-
-            const db = await config.getMongoDb(config.getDBName());
-
-            const topicStore = new TopicsStore(db, config);
-
-            // Finds all topics of the user
-            const topics = await topicStore.findTopicsByUser(user);
-
-            // Return the topics
-            return {
-                content: [
-                    {
-                        type: "text",
-                        text: `Here are your topics in Tome:\n${JSON.stringify(topics, null, 2)}`
-                    }
-                ]
-            };
-
-
-        } catch (error) {
-
-            logger.compute(this.cid, `${error}`, "error")
-
-            if (error instanceof ValidationError || error instanceof TotoRuntimeError) {
-                throw error;
-            }
-            else {
-                console.log(error);
-                throw error;
-            }
-
-        }
-    }
-
-    async do(req: Request, userContext: UserContext): Promise<any> {
+    async do(req: GetTopicsRequest, userContext: UserContext): Promise<GetTopicsResponse> {
 
         const logger = Logger.getInstance();
         const config = this.config as ControllerConfig;
@@ -100,4 +58,15 @@ export class GetTopics extends TotoMCPDelegate {
 
     }
 
+    public parseRequest(req: Request): GetTopicsRequest {
+        return {}
+    }
+
+}
+
+interface GetTopicsRequest {
+}
+
+interface GetTopicsResponse {
+    topics: Topic[];
 }
