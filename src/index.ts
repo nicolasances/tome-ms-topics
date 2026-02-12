@@ -7,12 +7,14 @@ import { RefreshTopic } from "./dlg/RefreshTopic";
 import { OnFlashcardsCreated } from "./evt/handlers/OnFlashcardsCreated";
 import { OnPracticeFinished } from "./evt/handlers/OnPracticeFinished";
 import { OnTopicScraped } from "./evt/handlers/OnTopicScraped";
-import { SupportedHyperscalers, TotoMicroservice, getHyperscalerConfiguration } from "totoms"
+import { SupportedHyperscalers, TotoMicroservice, getHyperscalerConfiguration } from "totoms";
 import { PutTopic } from "./dlg/PutTopic";
+
 
 TotoMicroservice.init({
     serviceName: "tome-ms-topics",
     basePath: '/tometopics',
+    port: 8080,
     environment: {
         hyperscaler: process.env.HYPERSCALER as SupportedHyperscalers || "aws",
         hyperscalerConfiguration: getHyperscalerConfiguration()
@@ -27,9 +29,9 @@ TotoMicroservice.init({
             { method: 'PUT', path: '/topics/:topicId', delegate: PutTopic },
             { method: 'POST', path: '/topics/:topicId/refresh', delegate: RefreshTopic }
         ],
-        apiOptions: { noCorrelationId: true }, 
+        apiOptions: { noCorrelationId: true },
         openAPISpecification: { localSpecsFilePath: './openapi.yaml' }
-    }, 
+    },
     messageBusConfiguration: {
         topics: [
             { logicalName: "tometopics", secret: "tome_topics_topic_name" }
@@ -39,6 +41,16 @@ TotoMicroservice.init({
             OnPracticeFinished,
             OnFlashcardsCreated
         ]
+    },
+    mcpConfiguration: {
+        enableMCP: true,
+        serverConfiguration: {
+            name: "Tome Topics MCP Server",
+            tools: [
+                GetTopics,
+                GetTopic
+            ]
+        }
     }
 }).then((microservice: TotoMicroservice) => {
     microservice.start();
