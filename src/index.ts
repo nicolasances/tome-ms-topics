@@ -32,21 +32,20 @@ TotoMicroservice.init({
         apiOptions: { noCorrelationId: true },
         openAPISpecification: { localSpecsFilePath: './openapi.yaml' }
     },
-    // messageBusConfiguration: {
-    //     topics: [
-    //         { logicalName: "tometopics", secret: "tome_topics_topic_name" }
-    //     ],
-    //     messageHandlers: [
-    //         OnTopicScraped,
-    //         OnPracticeFinished,
-    //         OnFlashcardsCreated
-    //     ]
-    // },
+    messageBusConfiguration: {
+        topics: [
+            { logicalName: "tometopics", secret: "tome_topics_topic_name" }
+        ],
+        messageHandlers: [
+            OnTopicScraped,
+            OnPracticeFinished,
+            OnFlashcardsCreated
+        ]
+    },
     mcpConfiguration: {
         enableMCP: true,
         serverConfiguration: {
             name: "Tome Topics MCP Server",
-            port: 4100,
             tools: [
                 GetTopics,
                 GetTopic

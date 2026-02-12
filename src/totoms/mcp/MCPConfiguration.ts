@@ -9,6 +9,5 @@ export interface MCPConfiguration {
 
 export interface MCPServerConfiguration {
     name: string;   // Name of the MCP server instance
-    port: number;   // Port to listen on
     tools?: (new (messageBus: TotoMessageBus, config: TotoControllerConfig) => TotoMCPDelegate<any, any>)[]; // Optional list of tools to register on the server
 }   
