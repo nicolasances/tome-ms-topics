@@ -4,14 +4,14 @@ import { TopicMetadata, TopicsStore } from "../store/TopicsStore";
 import { Logger, TotoDelegate, TotoRuntimeError, UserContext, ValidationError } from "totoms";
 
 
-export class PutTopic extends TotoDelegate<any, PutTopicResponse> {
+export class PutTopic extends TotoDelegate<PutTopicRequest, PutTopicResponse> {
 
-    async do(req: any, userContext: UserContext): Promise<PutTopicResponse> {
+    async do(req: PutTopicRequest, userContext: UserContext): Promise<PutTopicResponse> {
 
         const logger = Logger.getInstance();
         const config = this.config as ControllerConfig;
 
-        const topicId = req.params.topicId;
+        const topicId = req.topicId;
 
         const topicMetadata = TopicMetadata.fromHTTPBody(req);
 
@@ -42,10 +42,17 @@ export class PutTopic extends TotoDelegate<any, PutTopicResponse> {
 
     }
     
-    public parseRequest(req: Request) {
-        return req.body;
+    public parseRequest(req: Request): PutTopicRequest {
+        return {
+            topicId: req.params.topicId,
+            ...req.body
+        };
     }
 
+}
+
+interface PutTopicRequest extends TopicMetadata {
+    topicId: string;
 }
 
 interface PutTopicResponse {
