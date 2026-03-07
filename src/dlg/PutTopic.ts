@@ -43,8 +43,13 @@ export class PutTopic extends TotoDelegate<PutTopicRequest, PutTopicResponse> {
     }
     
     public parseRequest(req: Request): PutTopicRequest {
+
+        const topicId = req?.params?.topicId || req?.params?.id;
+
+        if (!topicId) throw new ValidationError(400, "topicId parameter is required");
+
         return {
-            topicId: req.params.topicId,
+            topicId: topicId,
             ...req.body
         };
     }
